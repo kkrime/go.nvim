@@ -196,28 +196,18 @@ end)
 
 describe('Resolve Collisions:', function()
   package.loaded['go.buildtargets'] = nil
+
   it("test case 1", function()
     local buildtargets = require('go.buildtargets')
     local add_target_to_cache = buildtargets._add_target_to_cache
 
-    local project_root = "/Users/kkrime/go/src/prj"
-    local template = {
-      [project_root] = {
-        ["error_creator"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
-        -- menu = {
-        --   height = 5,
-        --   items = { "error_creator", "prj", "asset_generator", "protoc-gen-authoption", "protoc-gen-prj" },
-        --   width = 21
-        -- },
-        -- ["protoc-gen-authoption"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
-        -- ["asset_generator"] = { idx = 3, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
-      }
-    }
+    local targets_map = {}
 
-    buildtargets._cache = template
+    local error_creator1 = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator1, project_root)
 
-    local error_creator = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
-    add_target_to_cache('error_creator', error_creator, project_root)
+    local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
     local expected_result = {
       ["/Users/kkrime/go/src/prj"] = {
         ["error_creator"] = {
@@ -231,15 +221,19 @@ describe('Resolve Collisions:', function()
             target_name = "internal/error_creator",
             capture_pattern = ".*/.*",
             resolution_string = "/prj/internal/error_creator",
-            target_details = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
+            target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           } },
         project_location = "/Users/kkrime/go/src"
       }
     }
     eq(buildtargets._collisions, expected_result)
 
-    error_creator = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go" }
-    add_target_to_cache('error_creator', error_creator, project_root)
+    local error_creator3 = {
+      idx = 3,
+      location =
+      "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"
+    }
+    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
     expected_result = {
       ["/Users/kkrime/go/src/prj"] = {
         ["error_creator"] = {
@@ -253,41 +247,66 @@ describe('Resolve Collisions:', function()
             target_name = "prj/internal/error_creator",
             capture_pattern = ".*/.*/.*",
             resolution_string = "/prj/internal/error_creator",
-            target_details = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
+            target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           },
           {
             target_name = "protoc/internal/error_creator",
             capture_pattern = ".*/.*/.*",
             resolution_string = "/prj/internal/protoc/internal/error_creator",
-            target_details = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go" },
+            target_details = { idx = 3, location = "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go" },
           } },
         project_location = "/Users/kkrime/go/src"
       }
     }
     eq(buildtargets._collisions, expected_result)
+    targets_map[menu] = {
+      height = 1,
+      items = { "error_creator" },
+      width = 13
+    }
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
+    local final_results = {
+      ["generate/error_creator"] = {
+        idx = 1,
+        location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go"
+      },
+      menu = {
+        height = 3,
+        items = { "generate/error_creator", "prj/internal/error_creator", "protoc/internal/error_creator" },
+        width = 29
+      },
+      ["prj/internal/error_creator"] = {
+        idx = 2,
+        location = "/Users/kkrime/go/src/prj/internal/error_creator.go"
+      },
+      ["protoc/internal/error_creator"] = {
+        idx = 3,
+        location = "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"
+      }
+    }
+    eq(targets_map, final_results)
   end)
 
-  it("test case 1", function()
-    package.loaded['go.buildtargets'] = nil
+  it("test case 2", function()
+    -- intentionally not unloading buildtargets to make sure
+    -- M._collisions is reset
+    -- package.loaded['go.buildtargets'] = nil
+
     local buildtargets = require('go.buildtargets')
     local add_target_to_cache = buildtargets._add_target_to_cache
 
     local project_root = "/Users/kkrime/go/src/prj"
-    local template = {
-      [project_root] = {
-        ["error_creator"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
-        menu = {
-          height = 1,
-          items = { "error_creator" },
-          width = 13
-        },
-      }
-    }
+    local targets_map = {}
 
-    buildtargets._cache = template
+    local error_creator = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator, project_root)
 
-    local error_creator = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
-    add_target_to_cache('error_creator', error_creator, project_root)
+    -- vim.notify(vim.inspect({ target_map = target_map }))
+    -- eq(next(target_map), nil)
+    -- eq(target_map['error_creator'], nil)
+
+    local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
     local expected_result = {
       ["/Users/kkrime/go/src/prj"] = {
         ["error_creator"] = {
@@ -309,8 +328,8 @@ describe('Resolve Collisions:', function()
 
     eq(buildtargets._collisions, expected_result)
 
-    error_creator = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" }
-    add_target_to_cache('error_creator', error_creator, project_root)
+    local error_creator3 = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
     expected_result = {
       ["/Users/kkrime/go/src/prj"] = {
         ["error_creator"] = {
@@ -336,7 +355,32 @@ describe('Resolve Collisions:', function()
       }
     }
     eq(buildtargets._collisions, expected_result)
-    buildtargets._add_resolved_target_name_collisions(project_root)
-    vim.notify(vim.inspect({ buildtargets = buildtargets._cache }))
+
+    targets_map[menu] = {
+      height = 1,
+      items = { "error_creator" },
+      width = 13
+    }
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
+    local final_results = {
+      ["generate/error_creator"] = {
+        idx = 1,
+        location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go"
+      },
+      menu = {
+        height = 3,
+        items = { "generate/error_creator", "prj/internal/error_creator", "prj/prj/internal/error_creator" },
+        width = 30
+      },
+      ["prj/internal/error_creator"] = {
+        idx = 2,
+        location = "/Users/kkrime/go/src/prj/internal/error_creator.go"
+      },
+      ["prj/prj/internal/error_creator"] = {
+        idx = 3,
+        location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go"
+      }
+    }
+    eq(targets_map, final_results)
   end)
 end)

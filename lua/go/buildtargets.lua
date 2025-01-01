@@ -1,4 +1,4 @@
--- " local get_project_root = require("project_nvim.project").get_project_root
+-- local get_project_root = require("project_nvim.project").get_project_root
 local save_path = vim.fn.expand("$HOME/.go_build.json")
 local popup = require("plenary.popup")
 
@@ -402,23 +402,25 @@ local resolve_target_name_collision = function(target, target_details, project_r
   -- vim.notify(vim.inspect({ collisions = collisions }))
 end
 
-local add_resolved_target_name_collisions = function(project_root)
-  M._collisions[project_root]['project_location'] = nil
-  M._cache[project_root][menu]['height'] = M._cache[project_root][menu]['height'] - 1
-  for target, target_resolution_details in pairs(M._collisions[project_root]) do
-    M._cache[project_root][target] = nil
-    for _, target_resolution_detail in ipairs(target_resolution_details) do
-      local target_name = target_resolution_detail.target_name
-      local target_details = target_resolution_detail.target_details
-      local target_idx = target_resolution_detail.target_details.idx
-      M._cache[project_root][target_name] = target_details
-      M._cache[project_root][menu][items][target_idx] = target_name
-      M._cache[project_root][menu]['height'] = M._cache[project_root][menu]['height'] + 1
-      if #target_name > M._cache[project_root][menu]['width'] then
-        M._cache[project_root][menu]['width'] = #target_name
+local add_resolved_target_name_collisions = function(targets_map, project_root)
+  if M._collisions[project_root] then
+    M._collisions[project_root]['project_location'] = nil
+    targets_map[menu]['height'] = targets_map[menu]['height'] - 1
+    for target, target_resolution_details in pairs(M._collisions[project_root]) do
+      targets_map[target] = nil
+      for _, target_resolution_detail in ipairs(target_resolution_details) do
+        local target_name = target_resolution_detail.target_name
+        local target_details = target_resolution_detail.target_details
+        local target_idx = target_resolution_detail.target_details.idx
+        targets_map[target_name] = target_details
+        targets_map[menu][items][target_idx] = target_name
+        targets_map[menu]['height'] = targets_map[menu]['height'] + 1
+        if #target_name > targets_map[menu]['width'] then
+          targets_map[menu]['width'] = #target_name
+        end
       end
+      M._collisions[project_root] = nil
     end
-    M._collisions[project_root] = nil
   end
 end
 
@@ -428,23 +430,21 @@ local get_project_location = function(project_root)
   return project_location
 end
 
-local add_target_to_cache = function(target, target_details, project_root)
-  local collision = M._cache[project_root][target]
+local add_target_to_cache = function(targets_map, target, target_details, project_root)
+  local collision = targets_map[target]
 
   if not collision then
-    M._cache[project_root][target] = target_details
+    targets_map[target] = target_details
     return
   end
 
   if not M._collisions[project_root] then
     M._collisions[project_root] = {}
-    -- local project_location = project_root:match('^(.*)/.+/*$')
-    -- TODO test this
     local project_location = get_project_location(project_root)
     M._collisions[project_root]['project_location'] = project_location
     M._collisions[project_root][target] = {}
-    local target_location = M._cache[project_root][target][location]
-    local target_details = M._cache[project_root][target]
+    local target_location = targets_map[target][location]
+    local target_details = targets_map[target]
     local resolution_string = create_target_name_resolution_string(target_location, project_location)
     table.insert(M._collisions[project_root][target],
       {
@@ -523,7 +523,8 @@ function scan_project(project_root, bufnr)
               if ts_query_match == 3 then
                 menu_height = menu_height + 1
                 local target_name = get_target_name(filelocation)
-                targets[target_name] = { idx = menu_height, location = filelocation }
+                -- targets[target_name] = { idx = menu_height, location = filelocation }
+                add_target_to_cache(targets, target_name, { idx = menu_height, location = filelocation })
                 if #target_name > menu_width then
                   menu_width = #target_name
                 end
@@ -538,6 +539,7 @@ function scan_project(project_root, bufnr)
   end
   if menu_height > 0 then
     targets[menu] = { items = menu_items, width = menu_width, height = menu_height }
+    add_resolved_target_name_collisions(targets, project_root)
     if M._cache[project_root] then
       -- this is a refresh
       refresh_project_buildtargerts(M._cache[project_root], targets, project_root)
