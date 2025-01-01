@@ -5,17 +5,17 @@ local vfn = vim.fn
 -- Keep this in sync with README.md
 -- Keep this in sync with doc/go.txt
 _GO_NVIM_CFG = {
-  disable_defaults = false, -- true|false when true disable all default settings, user need to set all settings
-  go = 'go', -- set to go1.18beta1 if necessary
-  goimports = 'gopls', -- if set to 'gopls' will use gopls format, also goimports
+  disable_defaults = false,       -- true|false when true disable all default settings, user need to set all settings
+  go = 'go',                      -- set to go1.18beta1 if necessary
+  goimports = 'gopls',            -- if set to 'gopls' will use gopls format, also goimports
   fillstruct = 'gopls',
-  gofmt = 'gopls', -- if set to gopls will use gopls format
+  gofmt = 'gopls',                -- if set to gopls will use gopls format
   max_line_len = 0,
-  tag_transform = false, -- gomodifytags: set to e.g. 'snakecase' to transform to snake_case
+  tag_transform = false,          -- gomodifytags: set to e.g. 'snakecase' to transform to snake_case
   tag_options = 'json=omitempty', -- gomodifytags: set to e.g. 'json=omitempty' to add tag options
 
-  gotests_template = '', -- sets gotests -template parameter (check gotests for details)
-  gotests_template_dir = '', -- sets gotests -template_dir parameter (check gotests for details)
+  gotests_template = '',          -- sets gotests -template parameter (check gotests for details)
+  gotests_template_dir = '',      -- sets gotests -template_dir parameter (check gotests for details)
   gotest_case_exact_match = true, -- default to true, if set to false will match any part of the test name
 
   comment_placeholder = '   ',
@@ -26,9 +26,9 @@ _GO_NVIM_CFG = {
   lsp_cfg = false, -- false: do nothing
   -- true: apply non-default gopls setup defined in go/gopls.lua
   -- if lsp_cfg is a table, merge table with with non-default gopls setup in go/gopls.lua, e.g.
-  lsp_gofumpt = false, -- true: set default gofmt in gopls format to gofumpt
+  lsp_gofumpt = false,            -- true: set default gofmt in gopls format to gofumpt
   lsp_semantic_highlights = true, -- use highlights from gopls
-  lsp_on_attach = nil, -- nil: use on_attach function defined in go/lsp.lua for gopls,
+  lsp_on_attach = nil,            -- nil: use on_attach function defined in go/lsp.lua for gopls,
   --      when lsp_cfg is true
   -- if lsp_on_attach is a function: use this function as on_attach function for gopls,
   --                                 when lsp_cfg is true
@@ -51,7 +51,7 @@ _GO_NVIM_CFG = {
       severity = vim.diagnostic.severity.INFO, -- severity level of the diagnostics
     },
   },
-  diagnostic = { -- set diagnostic to false to disable diagnostic
+  diagnostic = {  -- set diagnostic to false to disable diagnostic
     hdlr = false, -- hook diagnostic handler and send error to quickfix
     underline = true,
     -- virtual text setup
@@ -77,9 +77,9 @@ _GO_NVIM_CFG = {
   preludes = { -- experimental feature, set to empty to disable; set to function to enable
     default = function()
       return {}
-    end, -- one for all commands
+    end,               -- one for all commands
     GoRun = function() -- the commands to run before GoRun, this override default
-      return {} -- e.g. return {'watchexe', '--restart', '-v', '-e', 'go'}
+      return {}        -- e.g. return {'watchexe', '--restart', '-v', '-e', 'go'}
       -- so you will run `watchexe --restart -v -e go go run `
     end,
   },
@@ -129,39 +129,39 @@ _GO_NVIM_CFG = {
   lsp_diag_update_in_insert = false,
   lsp_fmt_async = false, -- async lsp.buf.format
   go_boilplater_url = 'https://github.com/thockin/go-build-template.git',
-  gopls_cmd = nil, --- you can provide gopls path and cmd if it not in PATH, e.g. cmd = {  "/home/ray/.local/nvim/data/lspinstall/go/gopls" }
+  gopls_cmd = nil,       --- you can provide gopls path and cmd if it not in PATH, e.g. cmd = {  "/home/ray/.local/nvim/data/lspinstall/go/gopls" }
   gopls_remote_auto = true,
   gocoverage_sign = '█',
   gocoverage_skip_covered = false,
-  sign_covered_hl = 'String', --- highlight group for test covered sign
+  sign_covered_hl = 'String',     --- highlight group for test covered sign
   sign_partial_hl = 'WarningMsg', --- highlight group for test partially covered sign
-  sign_uncovered_hl = 'Error', -- highlight group for uncovered code
-  launch_json = nil, -- the launch.json file path, default to .vscode/launch.json
+  sign_uncovered_hl = 'Error',    -- highlight group for uncovered code
+  launch_json = nil,              -- the launch.json file path, default to .vscode/launch.json
   -- launch_json = vfn.getcwd() .. "/.vscode/launch.json",
   dap_debug = true,
-  dap_debug_gui = {}, -- bool|table put your dap-ui setup here set to false to disable
-  dap_debug_keymap = true, -- true: use keymap for debugger defined in go/dap.lua
+  dap_debug_gui = {},                                                            -- bool|table put your dap-ui setup here set to false to disable
+  dap_debug_keymap = true,                                                       -- true: use keymap for debugger defined in go/dap.lua
   -- false: do not use keymap in go/dap.lua.  you must define your own.
   dap_debug_vt = { enabled = true, enabled_commands = true, all_frames = true }, -- bool|table put your dap-virtual-text setup here set to false to disable
-  dap_port = 38697, -- can be set to a number or -1 so go.nvim will pickup a random port
-  dap_timeout = 15, --  see dap option initialize_timeout_sec = 15,
-  dap_enrich_config = nil, -- see dap option enrich_config
-  dap_retries = 20, -- see dap option max_retries
-  build_tags = '', --- you can provide extra build tags for tests or debugger
-  textobjects = true, -- treesitter binding for text objects
-  test_runner = 'go', -- one of {`go`, `richgo`, `dlv`, `ginkgo`, `gotestsum`}
-  verbose_tests = false, -- set to add verbose flag to tests deprecated see '-v'
-  run_in_floaterm = false, -- set to true to run in float window.
+  dap_port = 38697,                                                              -- can be set to a number or -1 so go.nvim will pickup a random port
+  dap_timeout = 15,                                                              --  see dap option initialize_timeout_sec = 15,
+  dap_enrich_config = nil,                                                       -- see dap option enrich_config
+  dap_retries = 20,                                                              -- see dap option max_retries
+  build_tags = '',                                                               --- you can provide extra build tags for tests or debugger
+  textobjects = true,                                                            -- treesitter binding for text objects
+  test_runner = 'go',                                                            -- one of {`go`, `richgo`, `dlv`, `ginkgo`, `gotestsum`}
+  verbose_tests = false,                                                         -- set to add verbose flag to tests deprecated see '-v'
+  run_in_floaterm = false,                                                       -- set to true to run in float window.
   floaterm = {
-    posititon = 'auto', -- one of {`top`, `bottom`, `left`, `right`, `center`, `auto`}
-    width = 0.45, -- width of float window if not auto
-    height = 0.98, -- height of float window if not auto
-    title_colors = 'nord', -- table of colors for title, or a color scheme name
+    posititon = 'auto',                                                          -- one of {`top`, `bottom`, `left`, `right`, `center`, `auto`}
+    width = 0.45,                                                                -- width of float window if not auto
+    height = 0.98,                                                               -- height of float window if not auto
+    title_colors = 'nord',                                                       -- table of colors for title, or a color scheme name
   },
-  trouble = false, -- true: use trouble to open quickfix
-  test_efm = false, -- errorfomat for quickfix, default mix mode, set to true will be efm only
+  trouble = false,                                                               -- true: use trouble to open quickfix
+  test_efm = false,                                                              -- errorfomat for quickfix, default mix mode, set to true will be efm only
 
-  luasnip = false, -- enable included luasnip
+  luasnip = false,                                                               -- enable included luasnip
   username = '',
   useremail = '',
   disable_per_project_cfg = false, -- set to true to disable load script from .gonvim/init.lua
@@ -176,7 +176,7 @@ _GO_NVIM_CFG = {
   end, -- callback for stderr
   on_exit = function(code, signal, output)
     _, _, _ = code, signal, output
-  end, -- callback for jobexit, output : string
+  end,                      -- callback for jobexit, output : string
   iferr_vertical_shift = 4, -- defines where the cursor will end up vertically from the begining of if err statement after GoIfErr command
 }
 
@@ -237,6 +237,7 @@ function go.setup(cfg)
     _GO_NVIM_CFG.disable_defaults = true
     _GO_NVIM_CFG.diagnostic = false
   end
+  require('go.buildtargets').setup(cfg.buildtargets)
 
   _GO_NVIM_CFG = vim.tbl_deep_extend('force', _GO_NVIM_CFG, cfg)
 

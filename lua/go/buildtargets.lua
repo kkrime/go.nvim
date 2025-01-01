@@ -1,6 +1,7 @@
--- local get_project_root = require("project_nvim.project").get_project_root
 local save_path = vim.fn.expand("$HOME/.go_build.json")
 local popup = require("plenary.popup")
+
+local get_project_root
 
 local M = {}
 M._collisions = {}
@@ -10,6 +11,17 @@ local menu = 'menu'
 local items = 'items'
 local idx = 'idx'
 local location = 'location'
+
+function M.setup(cfg)
+  if cfg and cfg.get_project_root_func then
+    get_project_root = cfg.get_project_root_func
+  else
+    get_project_root = function()
+      local workfolder = vim.lsp.buf.list_workspace_folders()[1] or vim.fn.getcwd()
+      return workfolder
+    end
+  end
+end
 
 function M.get_current_buildtarget()
   local project_root = get_project_root()
