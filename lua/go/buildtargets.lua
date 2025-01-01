@@ -1,4 +1,4 @@
-local get_project_root = require("project_nvim.project").get_project_root
+-- " local get_project_root = require("project_nvim.project").get_project_root
 local save_path = vim.fn.expand("$HOME/.go_build.json")
 local popup = require("plenary.popup")
 
@@ -333,7 +333,7 @@ end
 local can_target_name_expand = function(target_resolution_details)
   -- the resolution_string starts with a '/', the target_name does not
   -- so we subtact 1 from the resolution_string string
-  target_resolution_string_length = #target_resolution_details.resolution_string - 1
+  local target_resolution_string_length = #target_resolution_details.resolution_string - 1
   return target_resolution_string_length ~= #target_resolution_details.target_name
 end
 
@@ -402,8 +402,30 @@ local resolve_target_name_collision = function(target, target_details, project_r
   -- vim.notify(vim.inspect({ collisions = collisions }))
 end
 
-local add_resolved_collisions = function(project_root)
-  M._collisions[project_root] = nil
+local add_resolved_target_name_collisions = function(project_root)
+  M._collisions[project_root]['project_location'] = nil
+  M._cache[project_root][menu]['height'] = M._cache[project_root][menu]['height'] - 1
+  for target, target_resolution_details in pairs(M._collisions[project_root]) do
+    M._cache[project_root][target] = nil
+    for _, target_resolution_detail in ipairs(target_resolution_details) do
+      local target_name = target_resolution_detail.target_name
+      local target_details = target_resolution_detail.target_details
+      local target_idx = target_resolution_detail.target_details.idx
+      M._cache[project_root][target_name] = target_details
+      M._cache[project_root][menu][items][target_idx] = target_name
+      M._cache[project_root][menu]['height'] = M._cache[project_root][menu]['height'] + 1
+      if #target_name > M._cache[project_root][menu]['width'] then
+        M._cache[project_root][menu]['width'] = #target_name
+      end
+    end
+    M._collisions[project_root] = nil
+  end
+end
+
+-- TODO add description
+local get_project_location = function(project_root)
+  local project_location = project_root:match('^(.*)/.+/*$')
+  return project_location
 end
 
 local add_target_to_cache = function(target, target_details, project_root)
@@ -416,7 +438,9 @@ local add_target_to_cache = function(target, target_details, project_root)
 
   if not M._collisions[project_root] then
     M._collisions[project_root] = {}
-    local project_location = project_root:match('^(.*)/.+/*$')
+    -- local project_location = project_root:match('^(.*)/.+/*$')
+    -- TODO test this
+    local project_location = get_project_location(project_root)
     M._collisions[project_root]['project_location'] = project_location
     M._collisions[project_root][target] = {}
     local target_location = M._cache[project_root][target][location]
@@ -595,6 +619,7 @@ end
 
 M.writebuildsfile = writebuildsfile
 M.readbuildsfile = readbuildsfile
+M._add_resolved_target_name_collisions = add_resolved_target_name_collisions
 
 M._refresh_project_buildtargerts = refresh_project_buildtargerts
 M._add_target_to_cache = add_target_to_cache

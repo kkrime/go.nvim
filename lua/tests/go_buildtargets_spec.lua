@@ -275,16 +275,12 @@ describe('Resolve Collisions:', function()
     local project_root = "/Users/kkrime/go/src/prj"
     local template = {
       [project_root] = {
-        -- ["asset_generator"] = { idx = 3, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
         ["error_creator"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
-        -- menu = {
-        --   height = 5,
-        --   items = { "error_creator", "prj", "asset_generator", "protoc-gen-authoption", "protoc-gen-prj" },
-        --   width = 21
-        -- },
-        -- ["protoc-gen-authoption"] = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
-        -- ["protoc-gen-prj"] = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
-        -- ["prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" }
+        menu = {
+          height = 1,
+          items = { "error_creator" },
+          width = 13
+        },
       }
     }
 
@@ -310,6 +306,7 @@ describe('Resolve Collisions:', function()
         project_location = "/Users/kkrime/go/src"
       }
     }
+
     eq(buildtargets._collisions, expected_result)
 
     error_creator = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" }
@@ -339,5 +336,7 @@ describe('Resolve Collisions:', function()
       }
     }
     eq(buildtargets._collisions, expected_result)
+    buildtargets._add_resolved_target_name_collisions(project_root)
+    vim.notify(vim.inspect({ buildtargets = buildtargets._cache }))
   end)
 end)
