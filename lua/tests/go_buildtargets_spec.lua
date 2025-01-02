@@ -9,46 +9,75 @@ local idx = 'idx'
 local location = 'location'
 
 local project_root = "/Users/kkrime/go/src/prj"
-local template = {
-  -- ["/Users/kkrime/go/src/prj"] = {
-  ["asset_generator"] = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
-  ["error_creator"] = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
-  menu = {
-    height = 5,
-    items = { "protoc-gen-authoption", "protoc-gen-prj", "prj", "asset_generator", "error_creator" },
-    width = 21
-  },
-  ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
-  ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
-  ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" }
-  -- }
-}
+-- local template = {
+--   -- ["/Users/kkrime/go/src/prj"] = {
+--   ["asset_generator"] = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
+--   ["error_creator"] = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
+--   menu = {
+--     height = 5,
+--     items = { "protoc-gen-authoption", "protoc-gen-prj", "prj", "asset_generator", "error_creator" },
+--     width = 21
+--   },
+--   ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
+--   ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
+--   ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" }
+--   -- }
+-- }
 
 describe('BuildTarget Refresh:', function()
-  local refresh_func = require('go.buildtargets')._refresh_project_buildtargerts
+  local buildtargets = require('go.buildtargets')
+  local refresh_project_buildtargets = buildtargets._refresh_project_buildtargets
 
   it("no change between original and refresh", function()
-    local original = vim.deepcopy(template)
-    local refresh = vim.deepcopy(template)
-    local expected_result = vim.deepcopy(template)
-
-    refresh_func(original, refresh, project_root)
-
-    eq(refresh, expected_result)
-  end)
-
-  it("refresh returns same targets, but in with completley different target idxs", function()
-    -- local original = vim.deepcopy(template)
-    local original = {
+    buildtargets._cache = {
+      [project_root] = {
+        ["asset_generator"] = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
+        ["error_creator"] = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
+        ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
+        ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
+        ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
+        menu = {
+          height = 5,
+          items = { "protoc-gen-authoption", "protoc-gen-prj", "prj", "asset_generator", "error_creator" },
+          width = 21
+        },
+      }
+    }
+    local refresh = {
+      ["asset_generator"] = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
+      ["error_creator"] = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
       ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
       ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
       ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
-      ["asset_generator"] = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
-      ["error_creator"] = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
       menu = {
         height = 5,
         items = { "protoc-gen-authoption", "protoc-gen-prj", "prj", "asset_generator", "error_creator" },
         width = 21
+      },
+    }
+    local expected_result = vim.deepcopy(refresh)
+
+    buildtargets._current_buildtarget[project_root] = 'asset_generator'
+
+    refresh_project_buildtargets(refresh, project_root)
+
+    eq(refresh, expected_result)
+    eq(buildtargets._current_buildtarget[project_root], 'asset_generator')
+  end)
+
+  it("test case 1; refresh returns same targets, but in with completley different target idxs", function()
+    buildtargets._cache = {
+      [project_root] = {
+        ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
+        ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
+        ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
+        ["asset_generator"] = { idx = 4, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/asset_generator.go" },
+        ["error_creator"] = { idx = 5, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
+        menu = {
+          height = 5,
+          items = { "protoc-gen-authoption", "protoc-gen-prj", "prj", "asset_generator", "error_creator" },
+          width = 21
+        },
       }
     }
     local refresh = { -- target idxs are completley different
@@ -63,21 +92,26 @@ describe('BuildTarget Refresh:', function()
         width = 21
       }
     }
-    local expected_result = vim.deepcopy(original)
+    local expected_result = vim.deepcopy(buildtargets._cache[project_root])
 
-    refresh_func(original, refresh, project_root)
+    buildtargets._current_buildtarget[project_root] = 'prj'
+
+    refresh_project_buildtargets(refresh, project_root)
 
     eq(refresh, expected_result)
+    eq(buildtargets._current_buildtarget[project_root], 'prj')
   end)
 
-  it("refresh returns some more targets than original, with 2 mutal targets in original", function()
-    local original = {
-      ["error_creator"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
-      ["prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" },
-      menu = {
-        height = 2,
-        items = { "error_creator", "prj" },
-        width = 13
+  it("test case 2: refresh returns some more targets than original, with 2 mutal targets in original", function()
+    buildtargets._cache = {
+      [project_root] = {
+        ["error_creator"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
+        ["prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" },
+        menu = {
+          height = 2,
+          items = { "error_creator", "prj" },
+          width = 13
+        },
       }
     }
     local refresh = { -- 'error_creator' and 'prj' have different target idxs
@@ -93,8 +127,11 @@ describe('BuildTarget Refresh:', function()
       }
     }
 
-    -- local project_root = "/Users/kkrime/go/src/prj"
-    refresh_func(original, refresh, project_root)
+    buildtargets._current_buildtarget[project_root] = nil
+
+    refresh_project_buildtargets(refresh, project_root)
+
+    eq(buildtargets._current_buildtarget[project_root], nil)
 
     -- the result should be that refresh contains all the targets, and that the targets that are mutual in
     -- original maintain their priority (in terms of target idxs)
@@ -132,15 +169,18 @@ describe('BuildTarget Refresh:', function()
   end)
 
   it("refresh contains 1 target that is also in original", function()
-    local original = {
-      ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
-      ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
-      ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
-      menu = {
-        height = 3,
-        items = { "protoc-gen-authoption", "protoc-gen-prj", "prj" },
-        width = 21
-      }
+    -- local original = {
+    buildtargets._cache = {
+      [project_root] = {
+        ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
+        ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
+        ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
+        menu = {
+          height = 3,
+          items = { "protoc-gen-authoption", "protoc-gen-prj", "prj" },
+          width = 21
+        },
+      },
     }
     local refresh = {
       ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
@@ -153,20 +193,26 @@ describe('BuildTarget Refresh:', function()
     }
     local expected_result = vim.deepcopy(refresh)
 
-    refresh_func(original, refresh, project_root)
+    buildtargets._current_buildtarget[project_root] = "protoc-gen-prj"
+
+    refresh_project_buildtargets(refresh, project_root)
+
     eq(refresh, expected_result)
+    eq(buildtargets._current_buildtarget[project_root], nil)
   end)
 
-  it("test case 4", function()
-    local original = {
-      ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
-      ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
-      ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
-      menu = {
-        height = 3,
-        items = { "protoc-gen-authoption", "protoc-gen-prj", "prj" },
-        width = 21
-      }
+  it("refresh contains 2 targets that are also in original but with different idxs", function()
+    buildtargets._cache = {
+      [project_root] = {
+        ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
+        ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
+        ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
+        menu = {
+          height = 3,
+          items = { "protoc-gen-authoption", "protoc-gen-prj", "prj" },
+          width = 21
+        },
+      },
     }
     local refresh = {
       ["protoc-gen-authoption"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
@@ -187,29 +233,73 @@ describe('BuildTarget Refresh:', function()
       }
     }
 
-    local project_root = "/Users/kkrime/go/src/prj"
-    refresh_func(original, refresh, project_root)
+    buildtargets._current_buildtarget[project_root] = 'protoc-gen-prj'
+
+    refresh_project_buildtargets(refresh, project_root)
 
     eq(refresh, expected_result)
+    eq(buildtargets._current_buildtarget[project_root], nil)
+  end)
+
+  it("refresh contains 2 targets that are also in original but with different idxs and changed file names", function()
+    buildtargets._cache = {
+      [project_root] = {
+        ["protoc"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/protoc.go" },
+        ["protoc-gen-prj"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-prj/main.go" },
+        ["prj"] = { idx = 3, location = "/Users/kkrime/go/src/prj/main.go" },
+        menu = {
+          height = 3,
+          items = { "protoc-gen-authoption", "protoc-gen-prj", "prj" },
+          width = 14
+        },
+      },
+    }
+    local refresh = {
+      ["protoc-gen-authoption"] = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
+      ["project"] = { idx = 1, location = "/Users/kkrime/go/src/prj/project.go" },
+      menu = {
+        height = 2,
+        items = { "prj", "protoc-gen-authoption" },
+        width = 21
+      }
+    }
+    local expected_result = {
+      ["protoc-gen-authoption"] = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/protoc/protoc-gen-authoption/main.go" },
+      ["project"] = { idx = 2, location = "/Users/kkrime/go/src/prj/project.go" },
+      menu = {
+        height = 2,
+        items = { "protoc-gen-authoption", "project" },
+        width = 21
+      }
+    }
+
+    buildtargets._current_buildtarget[project_root] = 'protoc'
+
+    refresh_project_buildtargets(refresh, project_root)
+
+    eq(refresh, expected_result)
+    eq(buildtargets._current_buildtarget[project_root], "protoc-gen-authoption")
   end)
 end)
 
 describe('Resolve Collisions:', function()
   package.loaded['go.buildtargets'] = nil
+  local buildtargets = require('go.buildtargets')
+  local add_target_to_cache = buildtargets._add_target_to_cache
 
-  it("test case 1", function()
-    local buildtargets = require('go.buildtargets')
-    local add_target_to_cache = buildtargets._add_target_to_cache
-
+  it("test case 1 - 3 target name collisions", function()
     local targets_map = {}
 
     local error_creator1 = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" }
     add_target_to_cache(targets_map, 'error_creator', error_creator1, project_root)
 
-    local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
-    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
+    local expected_target_map = {
+      ["error_creator"] = error_creator1
+    }
+    eq(targets_map, expected_target_map)
+
     local expected_result = {
-      ["/Users/kkrime/go/src/prj"] = {
+      [project_root] = {
         ["error_creator"] = {
           {
             target_name = "generate/error_creator",
@@ -226,16 +316,14 @@ describe('Resolve Collisions:', function()
         project_location = "/Users/kkrime/go/src"
       }
     }
+
+    local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
+
     eq(buildtargets._collisions, expected_result)
 
-    local error_creator3 = {
-      idx = 3,
-      location =
-      "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"
-    }
-    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
     expected_result = {
-      ["/Users/kkrime/go/src/prj"] = {
+      [project_root] = {
         ["error_creator"] = {
           {
             target_name = "generate/error_creator",
@@ -258,13 +346,16 @@ describe('Resolve Collisions:', function()
         project_location = "/Users/kkrime/go/src"
       }
     }
-    eq(buildtargets._collisions, expected_result)
-    targets_map[menu] = {
-      height = 1,
-      items = { "error_creator" },
-      width = 13
+
+    local error_creator3 = {
+      idx = 3,
+      location =
+      "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"
     }
-    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
+    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
+
+    eq(buildtargets._collisions, expected_result)
+
     local final_results = {
       ["generate/error_creator"] = {
         idx = 1,
@@ -284,37 +375,41 @@ describe('Resolve Collisions:', function()
         location = "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"
       }
     }
+
+    targets_map[menu] = {
+      height = 1,
+      items = { "error_creator", "error_creator", "error_creator" },
+      width = 13
+    }
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
+
     eq(targets_map, final_results)
+    eq(buildtargets._collisions[project_root], nil)
   end)
 
-  it("test case 2", function()
-    -- intentionally not unloading buildtargets to make sure
-    -- M._collisions is reset
-    -- package.loaded['go.buildtargets'] = nil
-
-    local buildtargets = require('go.buildtargets')
-    local add_target_to_cache = buildtargets._add_target_to_cache
-
-    local project_root = "/Users/kkrime/go/src/prj"
+  it("test case 2 - expanding target name all the way to the project location", function()
     local targets_map = {}
 
-    local error_creator = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" }
-    add_target_to_cache(targets_map, 'error_creator', error_creator, project_root)
+    local error_creator1 = {
+      idx = 1,
+      location =
+      "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go"
+    }
+    add_target_to_cache(targets_map, 'error_creator', error_creator1, project_root)
 
-    -- vim.notify(vim.inspect({ target_map = target_map }))
-    -- eq(next(target_map), nil)
-    -- eq(target_map['error_creator'], nil)
+    local expected_target_map = {
+      ["error_creator"] = error_creator1
+    }
+    eq(targets_map, expected_target_map)
 
-    local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
-    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
     local expected_result = {
-      ["/Users/kkrime/go/src/prj"] = {
+      [project_root] = {
         ["error_creator"] = {
           {
             target_name = "generate/error_creator",
             capture_pattern = ".*/.*",
             resolution_string = "/prj/internal/zerrors/generate/error_creator",
-            target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
+            target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go" },
           },
           {
             target_name = "internal/error_creator",
@@ -326,18 +421,19 @@ describe('Resolve Collisions:', function()
       }
     }
 
+    local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
+
     eq(buildtargets._collisions, expected_result)
 
-    local error_creator3 = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" }
-    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
     expected_result = {
-      ["/Users/kkrime/go/src/prj"] = {
+      [project_root] = {
         ["error_creator"] = {
           {
             target_name = "generate/error_creator",
             capture_pattern = ".*/.*",
             resolution_string = "/prj/internal/zerrors/generate/error_creator",
-            target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
+            target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go" },
           },
           {
             target_name = "prj/internal/error_creator",
@@ -346,6 +442,7 @@ describe('Resolve Collisions:', function()
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           },
           {
+            -- expanding the target name all the way to the project location
             target_name = "prj/prj/internal/error_creator",
             capture_pattern = ".*/.*/.*/.*",
             resolution_string = "/prj/prj/internal/error_creator",
@@ -354,18 +451,16 @@ describe('Resolve Collisions:', function()
         project_location = "/Users/kkrime/go/src"
       }
     }
+
+    local error_creator3 = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" }
+    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
+
     eq(buildtargets._collisions, expected_result)
 
-    targets_map[menu] = {
-      height = 1,
-      items = { "error_creator" },
-      width = 13
-    }
-    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
     local final_results = {
       ["generate/error_creator"] = {
         idx = 1,
-        location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go"
+        location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go"
       },
       menu = {
         height = 3,
@@ -381,6 +476,15 @@ describe('Resolve Collisions:', function()
         location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go"
       }
     }
+
+    targets_map[menu] = {
+      height = 1,
+      items = { "error_creator", "error_creator", "error_creator" },
+      width = 13
+    }
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
+
     eq(targets_map, final_results)
+    eq(buildtargets._collisions[project_root], nil)
   end)
 end)

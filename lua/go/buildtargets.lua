@@ -6,7 +6,8 @@ local get_project_root
 local M = {}
 M._collisions = {}
 M._cache = {}
-local current_buildtarget = {}
+
+M._current_buildtarget = {}
 local menu = 'menu'
 local items = 'items'
 local idx = 'idx'
@@ -15,17 +16,17 @@ local location = 'location'
 function M.setup(cfg)
   if cfg and cfg.get_project_root_func then
     get_project_root = cfg.get_project_root_func
-  else
-    get_project_root = function()
-      local workfolder = vim.lsp.buf.list_workspace_folders()[1] or vim.fn.getcwd()
-      return workfolder
-    end
+    -- load_buildtargets()
   end
+end
+
+function M.use_buildtargets()
+  return get_project_root ~= nil
 end
 
 function M.get_current_buildtarget()
   local project_root = get_project_root()
-  local current_target = current_buildtarget[project_root]
+  local current_target = M._current_buildtarget[project_root]
   if current_target then
     if #M._cache[project_root][menu][items] > 1 then
       return current_target
@@ -155,7 +156,7 @@ end
 
 function M.get_current_buildtarget_location()
   local project_root = get_project_root()
-  local current_target = current_buildtarget[project_root]
+  local current_target = M._current_buildtarget[project_root]
   if current_target then
     local buildtarget_location = M._cache[project_root][current_target][location]
     return buildtarget_location
@@ -179,7 +180,7 @@ function M.select_buildtarget(co)
   -- if only one build target, send build target location
   if #targets_names == 1 then
     local target_name = targets_names[1]
-    current_buildtarget[project_root] = target_name
+    M._current_buildtarget[project_root] = target_name
     local target_location = M._cache[project_root][target_name][location]
     if co then
       vim.schedule(function()
@@ -196,13 +197,13 @@ function M.select_buildtarget(co)
 end
 
 function update_buildtarget_map(project_root, selection)
-  local current_buildtarget_backup = current_buildtarget[project_root]
-  current_buildtarget[project_root] = selection
+  local current_buildtarget_backup = M._current_buildtarget[project_root]
+  M._current_buildtarget[project_root] = selection
 
   local selection_idx = M._cache[project_root][selection][idx]
   if selection_idx == 1 then
     if not current_buildtarget_backup then
-      writebuildsfile()
+      save_buildtargets()
       require('lualine').refresh()
     end
     return
@@ -234,7 +235,7 @@ function update_buildtarget_map(project_root, selection)
 
   M._cache[project_root][menu] = { items = menu_items, width = menu_width, height = menu_height }
 
-  writebuildsfile()
+  save_buildtargets()
   require('lualine').refresh()
 end
 
@@ -247,12 +248,15 @@ function match_location(original_dir, refresh_dir)
   return false
 end
 
-local refresh_project_buildtargerts = function(original, refresh, project_root)
+-- TODO rename this
+local refresh_project_buildtargets = function(refresh, project_root)
+  local original = M._cache[project_root]
+
   local new_current_buildtarget
   local previous_current_target_location
-  local current_target = current_buildtarget[project_root]
+  local current_target = M._current_buildtarget[project_root]
   if current_target then
-    previous_current_target_location = M._cache[project_root][current_target][location]:match('^(.*)/.*$')
+    previous_current_target_location = original[current_target][location]:match('^(.*)/.*$')
   end
 
   local idxs = {}
@@ -293,7 +297,6 @@ local refresh_project_buildtargerts = function(original, refresh, project_root)
     else
       new_target_idx = idx_target_change[ref_target_idx]
       if current_target then
-        -- TODO UT this
         local target_location = target_details[location]:match('^(.*)/.*$')
         if previous_current_target_location == target_location then
           new_current_buildtarget = target_name
@@ -308,12 +311,12 @@ local refresh_project_buildtargerts = function(original, refresh, project_root)
     end
   end
 
-  current_buildtarget[project_root] = new_current_buildtarget
+  M._current_buildtarget[project_root] = new_current_buildtarget
   refresh[menu] = { items = menu_items, width = menu_width, height = menu_height }
 
   -- TODO think about this...
   if not vim.deep_equal(backup_menu_items, refresh[menu][items]) then
-    writebuildsfile()
+    save_buildtargets()
   end
 end
 
@@ -554,13 +557,13 @@ function scan_project(project_root, bufnr)
     add_resolved_target_name_collisions(targets, project_root)
     if M._cache[project_root] then
       -- this is a refresh
-      refresh_project_buildtargerts(M._cache[project_root], targets, project_root)
+      refresh_project_buildtargets(targets, project_root)
     end
     -- vim.notify(vim.inspect({ "targets", targets = targets }))
     M._cache[project_root] = targets
   else
     M._cache[project_root] = nil
-    current_buildtarget[project_root] = nil
+    M._current_buildtarget[project_root] = nil
     return "no build targets found"
   end
 end
@@ -608,13 +611,13 @@ function path_exists(file)
   return uv.fs_stat(file) and true or false
 end
 
-function readbuildsfile()
+function load_buildtargets()
   local bufnr = vim.api.nvim_get_current_buf()
   if path_exists(save_path) then
     read_file(save_path, function(data)
       local data = vim.json.decode(data)
-      M._cache, current_buildtarget = unpack(data)
-      vim.notify(vim.inspect({ "reading", cache = M._cache, current_buildtarget = current_buildtarget }))
+      M._cache, M._current_buildtarget = unpack(data)
+      vim.notify(vim.inspect({ "reading", cache = M._cache, current_buildtarget = M._current_buildtarget }))
       vim.schedule(function()
         require('lualine').refresh()
       end)
@@ -622,20 +625,20 @@ function readbuildsfile()
   end
 end
 
-function writebuildsfile()
+function save_buildtargets()
   local data = {
-    M._cache, current_buildtarget
+    M._cache, M._current_buildtarget
   }
   local data = vim.json.encode(data)
   write_file(save_path, data)
-  vim.notify(vim.inspect({ "writing", cache = M._cache, current_buildtarget = current_buildtarget }))
+  vim.notify(vim.inspect({ "writing", cache = M._cache, current_buildtarget = M._current_buildtarget }))
 end
 
-M.writebuildsfile = writebuildsfile
-M.readbuildsfile = readbuildsfile
+M.save_buildtargets = save_buildtargets
+M.load_buildtargets = load_buildtargets
 M._add_resolved_target_name_collisions = add_resolved_target_name_collisions
 
-M._refresh_project_buildtargerts = refresh_project_buildtargerts
+M._refresh_project_buildtargets = refresh_project_buildtargets
 M._add_target_to_cache = add_target_to_cache
 
 return M
