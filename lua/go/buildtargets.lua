@@ -1,4 +1,4 @@
-local save_path = vim.fn.expand("$HOME/.go_build.json")
+local save_path = vim.fn.expand("$HOME/.go_buildtargets.json")
 local popup = require("plenary.popup")
 
 local get_project_root
@@ -6,17 +6,19 @@ local get_project_root
 local M = {}
 M._collisions = {}
 M._cache = {}
-
 M._current_buildtarget = {}
+
 local menu = 'menu'
 local items = 'items'
+local height = 'height'
 local idx = 'idx'
 local location = 'location'
 
 function M.setup(cfg)
   if cfg and cfg.get_project_root_func then
     get_project_root = cfg.get_project_root_func
-    -- load_buildtargets()
+    -- TODO add save_path
+    load_buildtargets()
   end
 end
 
@@ -252,11 +254,11 @@ end
 local refresh_project_buildtargets = function(refresh, project_root)
   local original = M._cache[project_root]
 
-  local new_current_buildtarget
-  local previous_current_target_location
-  local current_target = M._current_buildtarget[project_root]
-  if current_target then
-    previous_current_target_location = original[current_target][location]:match('^(.*)/.*$')
+  local updated_current_buildtarget
+  local current_buildtarget_location
+  local current_buildtarget = M._current_buildtarget[project_root]
+  if current_buildtarget then
+    current_buildtarget_location = original[current_buildtarget][location]:match('^(.*)/.*$')
   end
 
   local idxs = {}
@@ -290,17 +292,17 @@ local refresh_project_buildtargets = function(refresh, project_root)
   local menu_width = 0
   for target_name, target_details in pairs(refresh) do
     local new_target_idx
-    local ref_target_idx = target_details[idx]
-    if not ref_target_idx then
+    local target_idx = target_details[idx]
+    if not target_idx then
       menu_height = menu_height + 1
       new_target_idx = menu_height
     else
-      new_target_idx = idx_target_change[ref_target_idx]
-      if current_target then
-        local target_location = target_details[location]:match('^(.*)/.*$')
-        if previous_current_target_location == target_location then
-          new_current_buildtarget = target_name
-          current_target = nil
+      new_target_idx = idx_target_change[target_idx]
+      if current_buildtarget then
+        local target_buildtarget = target_details[location]:match('^(.*)/.*$')
+        if current_buildtarget_location == target_buildtarget then
+          updated_current_buildtarget = target_name
+          current_buildtarget = nil
         end
       end
     end
@@ -311,7 +313,7 @@ local refresh_project_buildtargets = function(refresh, project_root)
     end
   end
 
-  M._current_buildtarget[project_root] = new_current_buildtarget
+  M._current_buildtarget[project_root] = updated_current_buildtarget
   refresh[menu] = { items = menu_items, width = menu_width, height = menu_height }
 
   -- TODO think about this...
@@ -420,7 +422,7 @@ end
 local add_resolved_target_name_collisions = function(targets_map, project_root)
   if M._collisions[project_root] then
     M._collisions[project_root]['project_location'] = nil
-    targets_map[menu]['height'] = targets_map[menu]['height'] - 1
+    targets_map[menu][height] = targets_map[menu][height] - 1
     for target, target_resolution_details in pairs(M._collisions[project_root]) do
       targets_map[target] = nil
       for _, target_resolution_detail in ipairs(target_resolution_details) do
@@ -429,7 +431,7 @@ local add_resolved_target_name_collisions = function(targets_map, project_root)
         local target_idx = target_resolution_detail.target_details.idx
         targets_map[target_name] = target_details
         targets_map[menu][items][target_idx] = target_name
-        targets_map[menu]['height'] = targets_map[menu]['height'] + 1
+        targets_map[menu][height] = targets_map[menu][height] + 1
         if #target_name > targets_map[menu]['width'] then
           targets_map[menu]['width'] = #target_name
         end
@@ -446,9 +448,9 @@ local get_project_location = function(project_root)
 end
 
 local add_target_to_cache = function(targets_map, target, target_details, project_root)
-  local collision = targets_map[target]
+  local target_name_collision = targets_map[target]
 
-  if not collision then
+  if not target_name_collision then
     targets_map[target] = target_details
     return
   end
@@ -634,8 +636,8 @@ function save_buildtargets()
   vim.notify(vim.inspect({ "writing", cache = M._cache, current_buildtarget = M._current_buildtarget }))
 end
 
-M.save_buildtargets = save_buildtargets
-M.load_buildtargets = load_buildtargets
+M._save_buildtargets = save_buildtargets
+M._load_buildtargets = load_buildtargets
 M._add_resolved_target_name_collisions = add_resolved_target_name_collisions
 
 M._refresh_project_buildtargets = refresh_project_buildtargets
