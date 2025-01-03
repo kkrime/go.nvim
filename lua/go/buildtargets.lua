@@ -322,8 +322,10 @@ local refresh_project_buildtargets = function(refresh, project_root)
   end
 end
 
-function create_target_name_resolution_string(target_location, project_location)
-  local new_target_name_resolution_string = string.sub(target_location, #project_location + 1, #target_location)
+-- function create_target_name_resolution_string(target_location, project_location)
+-- local new_target_name_resolution_string = string.sub(target_location, #project_location + 1, #target_location)
+function create_target_name_resolution_string(target_location, project_root)
+  local new_target_name_resolution_string = string.sub(target_location, #project_root + 1, #target_location)
   local truncate = 3 -- '.go postfix'
   local ends_in_main = string.sub(new_target_name_resolution_string, #new_target_name_resolution_string - 7,
     #new_target_name_resolution_string)
@@ -356,8 +358,8 @@ end
 
 local resolve_target_name_collision = function(target, target_details, project_root)
   local collisions                    = M._collisions[project_root]
-  local project_location              = collisions.project_location
-  local new_target_resolution_string  = create_target_name_resolution_string(target_details[location], project_location)
+  -- local project_location              = collisions.project_location
+  local new_target_resolution_string  = create_target_name_resolution_string(target_details[location], project_root)
 
   local new_target_resolution_details = {
     target_name = target,
@@ -421,7 +423,7 @@ end
 
 local add_resolved_target_name_collisions = function(targets_map, project_root)
   if M._collisions[project_root] then
-    M._collisions[project_root]['project_location'] = nil
+    -- M._collisions[project_root]['project_location'] = nil
     targets_map[menu][height] = targets_map[menu][height] - 1
     for target, target_resolution_details in pairs(M._collisions[project_root]) do
       targets_map[target] = nil
@@ -443,7 +445,8 @@ end
 
 -- TODO add description
 local get_project_location = function(project_root)
-  local project_location = project_root:match('^(.*)/.+/*$')
+  -- local project_location = project_root:match('^(.*)/.+/*$')
+  local project_location = project_root:match('^(.*)/.*$')
   return project_location
 end
 
@@ -457,12 +460,13 @@ local add_target_to_cache = function(targets_map, target, target_details, projec
 
   if not M._collisions[project_root] then
     M._collisions[project_root] = {}
-    local project_location = get_project_location(project_root)
-    M._collisions[project_root]['project_location'] = project_location
+    -- local project_location = get_project_location(project_root)
+    -- M._collisions[project_root]['project_location'] = project_location
     M._collisions[project_root][target] = {}
     local target_location = targets_map[target][location]
     local target_details = targets_map[target]
-    local resolution_string = create_target_name_resolution_string(target_location, project_location)
+    -- local resolution_string = create_target_name_resolution_string(target_location, project_location)
+    local resolution_string = create_target_name_resolution_string(target_location, project_root)
     table.insert(M._collisions[project_root][target],
       {
         target_name = target,

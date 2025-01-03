@@ -304,16 +304,16 @@ describe('Resolve Collisions:', function()
           {
             target_name = "generate/error_creator",
             capture_pattern = ".*/.*",
-            resolution_string = "/prj/internal/zerrors/generate/error_creator",
+            resolution_string = "/internal/zerrors/generate/error_creator",
             target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
           },
           {
             target_name = "internal/error_creator",
             capture_pattern = ".*/.*",
-            resolution_string = "/prj/internal/error_creator",
+            resolution_string = "/internal/error_creator",
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           } },
-        project_location = "/Users/kkrime/go/src"
+        -- project_location = "/Users/kkrime/go/src"
       }
     }
 
@@ -328,24 +328,26 @@ describe('Resolve Collisions:', function()
           {
             target_name = "generate/error_creator",
             capture_pattern = ".*/.*",
-            resolution_string = "/prj/internal/zerrors/generate/error_creator",
+            resolution_string = "/internal/zerrors/generate/error_creator",
             target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
           },
           {
-            target_name = "prj/internal/error_creator",
-            capture_pattern = ".*/.*/.*",
-            resolution_string = "/prj/internal/error_creator",
+            target_name = "internal/error_creator",
+            capture_pattern = ".*/.*",
+            resolution_string = "/internal/error_creator",
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           },
           {
             target_name = "protoc/internal/error_creator",
             capture_pattern = ".*/.*/.*",
-            resolution_string = "/prj/internal/protoc/internal/error_creator",
+            resolution_string = "/internal/protoc/internal/error_creator",
             target_details = { idx = 3, location = "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go" },
           } },
-        project_location = "/Users/kkrime/go/src"
+        -- project_location = "/Users/kkrime/go/src"
       }
     }
+    vim.notify(vim.inspect({ expected_result = expected_result }))
+    vim.notify(vim.inspect({ var = buildtargets._collisions }))
 
     local error_creator3 = {
       idx = 3,
@@ -353,6 +355,8 @@ describe('Resolve Collisions:', function()
       "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"
     }
     add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
+    vim.notify(vim.inspect({ expected_result = expected_result }))
+    vim.notify(vim.inspect({ var = buildtargets._collisions }))
 
     eq(buildtargets._collisions, expected_result)
 
@@ -363,10 +367,10 @@ describe('Resolve Collisions:', function()
       },
       menu = {
         height = 3,
-        items = { "generate/error_creator", "prj/internal/error_creator", "protoc/internal/error_creator" },
+        items = { "generate/error_creator", "internal/error_creator", "protoc/internal/error_creator" },
         width = 29
       },
-      ["prj/internal/error_creator"] = {
+      ["internal/error_creator"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/internal/error_creator.go"
       },
@@ -408,16 +412,16 @@ describe('Resolve Collisions:', function()
           {
             target_name = "generate/error_creator",
             capture_pattern = ".*/.*",
-            resolution_string = "/prj/internal/zerrors/generate/error_creator",
+            resolution_string = "/internal/zerrors/generate/error_creator",
             target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go" },
           },
           {
             target_name = "internal/error_creator",
             capture_pattern = ".*/.*",
-            resolution_string = "/prj/internal/error_creator",
+            resolution_string = "/internal/error_creator",
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           } },
-        project_location = "/Users/kkrime/go/src"
+        -- project_location = "/Users/kkrime/go/src"
       }
     }
 
@@ -432,23 +436,23 @@ describe('Resolve Collisions:', function()
           {
             target_name = "generate/error_creator",
             capture_pattern = ".*/.*",
-            resolution_string = "/prj/internal/zerrors/generate/error_creator",
+            resolution_string = "/internal/zerrors/generate/error_creator",
             target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go" },
           },
           {
-            target_name = "prj/internal/error_creator",
-            capture_pattern = ".*/.*/.*",
-            resolution_string = "/prj/internal/error_creator",
+            target_name = "internal/error_creator",
+            capture_pattern = ".*/.*",
+            resolution_string = "/internal/error_creator",
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           },
           {
             -- expanding the target name all the way to the project location
-            target_name = "prj/prj/internal/error_creator",
-            capture_pattern = ".*/.*/.*/.*",
-            resolution_string = "/prj/prj/internal/error_creator",
+            target_name = "prj/internal/error_creator",
+            capture_pattern = ".*/.*/.*",
+            resolution_string = "/prj/internal/error_creator",
             target_details = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" },
           } },
-        project_location = "/Users/kkrime/go/src"
+        -- project_location = "/Users/kkrime/go/src"
       }
     }
 
@@ -467,11 +471,11 @@ describe('Resolve Collisions:', function()
         items = { "generate/error_creator", "prj/internal/error_creator", "prj/prj/internal/error_creator" },
         width = 30
       },
-      ["prj/internal/error_creator"] = {
+      ["internal/error_creator"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/internal/error_creator.go"
       },
-      ["prj/prj/internal/error_creator"] = {
+      ["prj/internal/error_creator"] = {
         idx = 3,
         location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go"
       }
