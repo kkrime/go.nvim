@@ -557,7 +557,7 @@ describe('Resolve Collisions:', function()
       [project_root] = {
         ["prj"] = {
           {
-            target_name = "/prj/prj",
+            target_name = "/prj/prj.go",
             capture_pattern = ".*/.*",
             resolution_string = "/prj/prj",
             target_details = {
@@ -566,7 +566,7 @@ describe('Resolve Collisions:', function()
             },
           },
           {
-            target_name = "/prj/prj.go",
+            target_name = "/prj/prj",
             capture_pattern = ".*/.*",
             resolution_string = "/prj/prj",
             target_details = {
@@ -586,17 +586,17 @@ describe('Resolve Collisions:', function()
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
-      ["/prj/prj"] = {
+      ["/prj/prj.go"] = {
         idx = 1,
         location = "/Users/kkrime/go/src/prj/prj.go"
       },
-      ["/prj/prj.go"] = {
+      ["/prj/prj"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/prj/main.go"
       },
       menu = {
         height = 2,
-        items = { "/prj/prj", "/prj/prj.go" },
+        items = { "/prj/prj.go", "/prj/prj" },
         width = 11
       },
     }
@@ -612,6 +612,8 @@ describe('Resolve Collisions:', function()
     eq(buildtargets._collisions[project_root], nil)
   end)
 
+  -- TODO
+  -- this in reverse
   it("test case 5 - expand colliding target name on project root 3", function()
     local targets_map = {}
 
@@ -631,7 +633,7 @@ describe('Resolve Collisions:', function()
       [project_root] = {
         ["prj"] = {
           {
-            target_name = "/prj/prj.go",
+            target_name = "/prj/prj",
             capture_pattern = ".*/.*",
             resolution_string = "/prj/prj",
             target_details = {
@@ -640,7 +642,7 @@ describe('Resolve Collisions:', function()
             },
           },
           {
-            target_name = "/prj/prj",
+            target_name = "/prj/prj.go",
             capture_pattern = ".*/.*",
             resolution_string = "/prj/prj",
             target_details = {
@@ -659,25 +661,24 @@ describe('Resolve Collisions:', function()
 
     local final_results = {
       ["/prj/prj"] = {
-        idx = 2,
-        location = "/Users/kkrime/go/src/prj/prj.go"
-      },
-      ["/prj/prj.go"] = {
         idx = 1,
         location = "/Users/kkrime/go/src/prj/prj/main.go"
       },
+      ["/prj/prj.go"] = {
+        idx = 2,
+        location = "/Users/kkrime/go/src/prj/prj.go"
+      },
       menu = {
         height = 2,
-        items = { "/prj/prj.go", "/prj/prj" },
+        items = { "/prj/prj", "/prj/prj.go" },
         width = 11
       }
     }
 
-
     targets_map[menu] = {
       height = 2,
       items = { "prj", "prj" },
-      width = 4
+      width = 3
     }
     buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
 
@@ -727,7 +728,6 @@ describe('Resolve Collisions:', function()
     }
 
     local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" }
-    -- vim.notify(vim.inspect({ targets_map = targets_map }))
     add_target_to_cache(targets_map, 'prj', prj, project_root)
     -- vim.notify(vim.inspect({ expected_result = expected_result }))
     -- vim.notify(vim.inspect({ _collisions = buildtargets._collisions }))
@@ -760,4 +760,9 @@ describe('Resolve Collisions:', function()
     eq(targets_map, final_results)
     eq(buildtargets._collisions[project_root], nil)
   end)
+  -- TODO
+  -- /Users/kkrime/go/src/prj/internal/api/assets/generator.go
+  -- /Users/kkrime/go/src/prj/internal/api/assets/generator/main.go
+  -- /Users/kkrime/go/src/prj/api/assets/generator.go
+  -- /Users/kkrime/go/src/prj/api/assets/generator/main.go
 end)

@@ -392,8 +392,8 @@ local resolve_target_name_collision = function(target, target_details, project_r
           local can_new_target_name_expand = can_target_name_expand(new_target_resolution_details)
 
           if not can_target_name_expand_ and not can_new_target_name_expand then
-            local new_target_location = new_target_resolution_details['target_details'][location]
-            if string.sub(new_target_location, #new_target_location - 6) ~= "main.go" then
+            local target_location = target_resolution_details['target_details'][location]
+            if string.sub(target_location, #target_location - 6) ~= "main.go" then
               target_resolution_details['target_name'] = target_resolution_details['target_name'] .. '.go'
             else
               new_target_resolution_details['target_name'] = new_target_resolution_details['target_name'] .. '.go'
