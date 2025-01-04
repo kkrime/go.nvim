@@ -317,7 +317,7 @@ describe('Resolve Collisions:', function()
             target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" },
           },
           {
-            target_name = "/prj/internal/error_creator",
+            target_name = "prj/internal/error_creator",
             capture_pattern = ".*/.*/.*",
             resolution_string = "/prj/internal/error_creator",
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
@@ -346,7 +346,7 @@ describe('Resolve Collisions:', function()
         idx = 1,
         location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go"
       },
-      ["/prj/internal/error_creator"] = {
+      ["prj/internal/error_creator"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/internal/error_creator.go"
       },
@@ -356,7 +356,7 @@ describe('Resolve Collisions:', function()
       },
       menu = {
         height = 3,
-        items = { "generate/error_creator", "/prj/internal/error_creator", "protoc/internal/error_creator" },
+        items = { "generate/error_creator", "prj/internal/error_creator", "protoc/internal/error_creator" },
         width = 29
       },
     }
@@ -422,14 +422,14 @@ describe('Resolve Collisions:', function()
           },
           {
             -- the target name shoudl expand the way to the project root
-            target_name = "/prj/internal/error_creator",
+            target_name = "prj/internal/error_creator",
             capture_pattern = ".*/.*/.*",
             resolution_string = "/prj/internal/error_creator",
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" },
           },
           {
-            target_name = "prj/internal/error_creator",
-            capture_pattern = ".*/.*/.*",
+            target_name = "prj/prj/internal/error_creator",
+            capture_pattern = ".*/.*/.*/.*",
             resolution_string = "/prj/prj/internal/error_creator",
             target_details = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" },
           } },
@@ -441,23 +441,24 @@ describe('Resolve Collisions:', function()
     add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
 
     eq(buildtargets._collisions, expected_result)
+
     local final_results = {
       ["generate/error_creator"] = {
         idx = 1,
         location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go"
       },
-      ["/prj/internal/error_creator"] = {
+      ["prj/internal/error_creator"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/internal/error_creator.go"
       },
-      ["prj/internal/error_creator"] = {
+      ["prj/prj/internal/error_creator"] = {
         idx = 3,
         location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go"
       },
       menu = {
         height = 3,
-        items = { "generate/error_creator", "/prj/internal/error_creator", "prj/internal/error_creator" },
-        width = 27
+        items = { "generate/error_creator", "prj/internal/error_creator", "prj/prj/internal/error_creator" },
+        width = 30
       },
     }
 
@@ -491,14 +492,14 @@ describe('Resolve Collisions:', function()
       [project_root] = {
         ["prj"] = {
           {
-            target_name = "/prj",
+            target_name = "prj",
             capture_pattern = ".*",
             resolution_string = "/prj",
             target_details = { idx = 1, location = "/Users/kkrime/go/src/prj/main.go" },
           },
           {
-            target_name = "prj",
-            capture_pattern = ".*",
+            target_name = "prj/prj",
+            capture_pattern = ".*/.*",
             resolution_string = "/prj/prj",
             target_details = { idx = 2, location = "/Users/kkrime/go/src/prj/prj/main.go" },
           } },
@@ -512,18 +513,18 @@ describe('Resolve Collisions:', function()
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
-      ["/prj"] = {
+      ["prj"] = {
         idx = 1,
         location = "/Users/kkrime/go/src/prj/main.go"
       },
-      ["prj"] = {
+      ["prj/prj"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/prj/main.go"
       },
       menu = {
         height = 2,
-        items = { "/prj", "prj" },
-        width = 4
+        items = { "prj", "prj/prj" },
+        width = 7
       },
     }
 
@@ -557,8 +558,9 @@ describe('Resolve Collisions:', function()
       [project_root] = {
         ["prj"] = {
           {
-            target_name = "/prj/prj.go",
-            capture_pattern = ".*/.*",
+            target_name = "prj",
+            add_filename_extension = true,
+            capture_pattern = ".*",
             resolution_string = "/prj/prj",
             target_details = {
               idx = 1,
@@ -566,8 +568,8 @@ describe('Resolve Collisions:', function()
             },
           },
           {
-            target_name = "/prj/prj",
-            capture_pattern = ".*/.*",
+            target_name = "prj",
+            capture_pattern = ".*",
             resolution_string = "/prj/prj",
             target_details = {
               idx = 2,
@@ -580,24 +582,23 @@ describe('Resolve Collisions:', function()
     }
 
     local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/prj/main.go" }
-    -- vim.notify(vim.inspect({ targets_map = targets_map }))
     add_target_to_cache(targets_map, 'prj', prj, project_root)
-    -- vim.notify(vim.inspect({ expected_result = expected_result }))
+
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
-      ["/prj/prj.go"] = {
+      ["prj.go"] = {
         idx = 1,
         location = "/Users/kkrime/go/src/prj/prj.go"
       },
-      ["/prj/prj"] = {
+      ["prj"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/prj/main.go"
       },
       menu = {
         height = 2,
-        items = { "/prj/prj.go", "/prj/prj" },
-        width = 11
+        items = { "prj.go", "prj" },
+        width = 6
       },
     }
 
@@ -612,8 +613,8 @@ describe('Resolve Collisions:', function()
     eq(buildtargets._collisions[project_root], nil)
   end)
 
-  -- TODO
-  -- this in reverse
+  -- -- TODO
+  -- -- this in reverse
   it("test case 5 - expand colliding target name on project root 3", function()
     local targets_map = {}
 
@@ -633,8 +634,8 @@ describe('Resolve Collisions:', function()
       [project_root] = {
         ["prj"] = {
           {
-            target_name = "/prj/prj",
-            capture_pattern = ".*/.*",
+            target_name = "prj",
+            capture_pattern = ".*",
             resolution_string = "/prj/prj",
             target_details = {
               idx = 1,
@@ -642,8 +643,9 @@ describe('Resolve Collisions:', function()
             },
           },
           {
-            target_name = "/prj/prj.go",
-            capture_pattern = ".*/.*",
+            target_name = "prj",
+            add_filename_extension = true,
+            capture_pattern = ".*",
             resolution_string = "/prj/prj",
             target_details = {
               idx = 2,
@@ -660,18 +662,18 @@ describe('Resolve Collisions:', function()
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
-      ["/prj/prj"] = {
+      ["prj"] = {
         idx = 1,
         location = "/Users/kkrime/go/src/prj/prj/main.go"
       },
-      ["/prj/prj.go"] = {
+      ["prj.go"] = {
         idx = 2,
         location = "/Users/kkrime/go/src/prj/prj.go"
       },
       menu = {
         height = 2,
-        items = { "/prj/prj", "/prj/prj.go" },
-        width = 11
+        items = { "prj", "prj.go" },
+        width = 6
       }
     }
 
@@ -705,8 +707,8 @@ describe('Resolve Collisions:', function()
       [project_root] = {
         ["prj"] = {
           {
-            target_name = "prj",
-            capture_pattern = ".*",
+            target_name = "prj/prj",
+            capture_pattern = ".*/.*",
             resolution_string = "/prj/prj",
             target_details = {
               idx = 1,
@@ -714,7 +716,7 @@ describe('Resolve Collisions:', function()
             },
           },
           {
-            target_name = "/prj",
+            target_name = "prj",
             capture_pattern = ".*",
             resolution_string = "/prj",
             target_details = {
@@ -729,23 +731,21 @@ describe('Resolve Collisions:', function()
 
     local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" }
     add_target_to_cache(targets_map, 'prj', prj, project_root)
-    -- vim.notify(vim.inspect({ expected_result = expected_result }))
-    -- vim.notify(vim.inspect({ _collisions = buildtargets._collisions }))
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
-      ["/prj"] = {
-        idx = 2,
-        location = "/Users/kkrime/go/src/prj/main.go"
-      },
-      ["prj"] = {
+      ["prj/prj"] = {
         idx = 1,
         location = "/Users/kkrime/go/src/prj/prj/main.go"
       },
+      ["prj"] = {
+        idx = 2,
+        location = "/Users/kkrime/go/src/prj/main.go"
+      },
       menu = {
         height = 2,
-        items = { "prj", "/prj" },
-        width = 4
+        items = { "prj/prj", "prj" },
+        width = 7
       },
     }
 
@@ -755,7 +755,6 @@ describe('Resolve Collisions:', function()
       width = 4
     }
     buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
-    -- vim.notify(vim.inspect({ targets_map = targets_map }))
 
     eq(targets_map, final_results)
     eq(buildtargets._collisions[project_root], nil)
@@ -765,4 +764,162 @@ describe('Resolve Collisions:', function()
   -- /Users/kkrime/go/src/prj/internal/api/assets/generator/main.go
   -- /Users/kkrime/go/src/prj/api/assets/generator.go
   -- /Users/kkrime/go/src/prj/api/assets/generator/main.go
+  it("test case 7 - expand colliding target name", function()
+    local targets_map = {}
+
+    local generator1 = {
+      idx = 1,
+      location =
+      "/Users/kkrime/go/src/prj/internal/api/assets/generator.go"
+    }
+    add_target_to_cache(targets_map, 'generator', generator1, project_root)
+
+    local expected_target_map = {
+      ["generator"] = generator1
+    }
+    eq(targets_map, expected_target_map)
+
+    local expected_result = {
+      [project_root] = {
+        ["generator"] = { {
+          target_name = "generator",
+          add_filename_extension = true,
+          capture_pattern = ".*",
+          resolution_string = "/prj/internal/api/assets/generator",
+          target_details = {
+            idx = 1,
+            location = "/Users/kkrime/go/src/prj/internal/api/assets/generator.go"
+          },
+        }, {
+          target_name = "generator",
+          capture_pattern = ".*",
+          resolution_string = "/prj/internal/api/assets/generator",
+          target_details = {
+            idx = 2,
+            location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/main.go"
+          },
+        } },
+        project_location = "/Users/kkrime/go/src"
+      },
+    }
+
+    local generator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/main.go" }
+    add_target_to_cache(targets_map, 'generator', generator2, project_root)
+    eq(buildtargets._collisions, expected_result)
+
+    expected_result = {
+      [project_root] = {
+        ["generator"] = { {
+          target_name = "internal/api/assets/generator",
+          capture_pattern = ".*/.*/.*/.*",
+          add_filename_extension = true,
+          resolution_string = "/prj/internal/api/assets/generator",
+          target_details = {
+            idx = 1,
+            location = "/Users/kkrime/go/src/prj/internal/api/assets/generator.go"
+          },
+        }, {
+          target_name = "internal/api/assets/generator",
+          capture_pattern = ".*/.*/.*/.*",
+          resolution_string = "/prj/internal/api/assets/generator",
+          target_details = {
+            idx = 2,
+            location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/main.go"
+          },
+        }, {
+          target_name = "external/api/assets/generator",
+          capture_pattern = ".*/.*/.*/.*",
+          resolution_string = "/prj/external/api/assets/generator",
+          target_details = {
+            idx = 3,
+            location = "/Users/kkrime/go/src/prj/external/api/assets/generator/main.go"
+          },
+        } },
+        project_location = "/Users/kkrime/go/src"
+      },
+    }
+
+    local generator3 = { idx = 3, location = "/Users/kkrime/go/src/prj/external/api/assets/generator/main.go" }
+    add_target_to_cache(targets_map, 'generator', generator3, project_root)
+    eq(buildtargets._collisions, expected_result)
+
+    expected_result = {
+      [project_root] = {
+        ["generator"] = { {
+          target_name = "internal/api/assets/generator",
+          add_filename_extension = true,
+          capture_pattern = ".*/.*/.*/.*",
+          resolution_string = "/prj/internal/api/assets/generator",
+          target_details = {
+            idx = 1,
+            location = "/Users/kkrime/go/src/prj/internal/api/assets/generator.go"
+          },
+        }, {
+          target_name = "internal/api/assets/generator",
+          capture_pattern = ".*/.*/.*/.*",
+          resolution_string = "/prj/internal/api/assets/generator",
+          target_details = {
+            idx = 2,
+            location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/main.go"
+          },
+        }, {
+          target_name = "external/api/assets/generator",
+          capture_pattern = ".*/.*/.*/.*",
+          resolution_string = "/prj/external/api/assets/generator",
+          target_details = {
+            idx = 3,
+            location = "/Users/kkrime/go/src/prj/external/api/assets/generator/main.go"
+          },
+        }, {
+          target_name = "external/api/assets/generator",
+          add_filename_extension = true,
+          capture_pattern = ".*/.*/.*/.*",
+          resolution_string = "/prj/external/api/assets/generator",
+          target_details = {
+            idx = 4,
+            location = "/Users/kkrime/go/src/prj/external/api/assets/generator.go"
+          },
+        } },
+        project_location = "/Users/kkrime/go/src"
+      },
+    }
+
+    local generator4 = { idx = 4, location = "/Users/kkrime/go/src/prj/external/api/assets/generator.go" }
+    add_target_to_cache(targets_map, 'generator', generator4, project_root)
+    eq(buildtargets._collisions, expected_result)
+
+    local final_results = {
+      ["internal/api/assets/generator.go"] = {
+        idx = 1,
+        location = "/Users/kkrime/go/src/prj/internal/api/assets/generator.go"
+      },
+      ["internal/api/assets/generator"] = {
+        idx = 2,
+        location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/main.go"
+      },
+      ["external/api/assets/generator"] = {
+        idx = 3,
+        location = "/Users/kkrime/go/src/prj/external/api/assets/generator/main.go"
+      },
+      ["external/api/assets/generator.go"] = {
+        idx = 4,
+        location = "/Users/kkrime/go/src/prj/external/api/assets/generator.go"
+      },
+      menu = {
+        height = 4,
+        items = { "internal/api/assets/generator.go", "internal/api/assets/generator", "external/api/assets/generator", "external/api/assets/generator.go" },
+        width = 32
+      }
+    }
+
+    targets_map[menu] = {
+      height = 4,
+      items = { "generator", "generator", "generator", "generator", },
+      width = 9
+    }
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
+
+    eq(targets_map, final_results)
+    eq(buildtargets._collisions[project_root], nil)
+  end)
 end)

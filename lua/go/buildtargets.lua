@@ -336,38 +336,31 @@ function create_target_name_resolution_string(target_location, project_location)
 end
 
 local expand_target_name = function(target_resolution_details)
-  local trd                             = target_resolution_details
-  local regex_start                     = '^.*/('
-  local regex_end                       = ')$'
+  local trd           = target_resolution_details
+  local regex_start   = '^.*/('
+  local regex_end     = ')$'
 
-  trd.capture_pattern                   = trd.capture_pattern .. '/.*'
-  local regex                           = regex_start .. trd.capture_pattern .. regex_end
-
-  local target_name                     = trd.resolution_string:match(regex)
-
-  local target_resolution_string_length = #trd.resolution_string - 1
-  local expanded_to_project_location    = target_resolution_string_length == #target_name
-  if expanded_to_project_location then
-    target_name = trd.resolution_string
-  end
-  trd.target_name = target_name
+  trd.capture_pattern = trd.capture_pattern .. '/.*'
+  local regex         = regex_start .. trd.capture_pattern .. regex_end
+  local target_name   = trd.resolution_string:match(regex)
+  trd.target_name     = target_name
 end
 
 local can_target_name_expand = function(target_resolution_details)
-  local target_resolution_string_length = #target_resolution_details.resolution_string
-  local target_name_length              = #target_resolution_details.target_name
+  local target_resolution_string_length = #target_resolution_details.resolution_string - 1
+  local target_name_length = #target_resolution_details.target_name
   return target_resolution_string_length ~= target_name_length
 end
 
 local resolve_target_name_collision = function(target, target_details, project_root)
-  local collisions                   = M._collisions[project_root]
-  local project_location             = collisions.project_location
-  local new_target_resolution_string = create_target_name_resolution_string(target_details[location], project_location)
+  local collisions                    = M._collisions[project_root]
+  local project_location              = collisions.project_location
+  local new_target_resolution_string  = create_target_name_resolution_string(target_details[location], project_location)
 
-  local new_target_name              = target
-  if #target + 1 == #new_target_resolution_string then
-    new_target_name = new_target_resolution_string
-  end
+  local new_target_name               = target
+  -- if #target + 1 == #new_target_resolution_string then
+  --   new_target_name = new_target_resolution_string
+  -- end
 
   local new_target_resolution_details = {
     target_name = new_target_name,
@@ -388,24 +381,24 @@ local resolve_target_name_collision = function(target, target_details, project_r
       if #target_name == #new_target_name then
         if target_name == new_target_name then
           -- vim.notify(vim.inspect({ "1", new_target_resolution_details, target_resolution_details }))
-          local can_target_name_expand_ = can_target_name_expand(target_resolution_details)
-          local can_new_target_name_expand = can_target_name_expand(new_target_resolution_details)
 
-          if not can_target_name_expand_ and not can_new_target_name_expand then
+          if #target_resolution_details['resolution_string'] == #new_target_resolution_details['resolution_string'] and
+              target_resolution_details['resolution_string'] == new_target_resolution_details['resolution_string'] then
+            -- corner case
             local target_location = target_resolution_details['target_details'][location]
             if string.sub(target_location, #target_location - 6) ~= "main.go" then
-              target_resolution_details['target_name'] = target_resolution_details['target_name'] .. '.go'
+              target_resolution_details['add_filename_extension'] = true
             else
-              new_target_resolution_details['target_name'] = new_target_resolution_details['target_name'] .. '.go'
+              new_target_resolution_details['add_filename_extension'] = true
             end
             resolved = true
           else
-            if can_target_name_expand_ then
-              -- vim.notify(vim.inspect({ can_target_name_expand_ = can_target_name_expand_, target_resolution_details }))
+            if can_target_name_expand(target_resolution_details) then
+              -- vim.notify(vim.inspect({ "can_target_name_expand_", target_resolution_details }))
               extend_target_name = true
             end
-            if can_new_target_name_expand then
-              -- vim.notify(vim.inspect({ can_new_target_name_expand = can_new_target_name_expand }))
+            if can_target_name_expand(new_target_resolution_details) then
+              -- vim.notify(vim.inspect({ "can_new_target_name_expand", can_new_target_name_expand }))
               extend_new_target_name = true
             end
           end
@@ -453,6 +446,9 @@ local add_resolved_target_name_collisions = function(targets_map, project_root)
       targets_map[target] = nil
       for _, target_resolution_detail in ipairs(target_resolution_details) do
         local target_name = target_resolution_detail.target_name
+        if target_resolution_detail['add_filename_extension'] then
+          target_name = target_name .. ".go"
+        end
         local target_details = target_resolution_detail.target_details
         local target_idx = target_resolution_detail.target_details.idx
         targets_map[target_name] = target_details
@@ -490,9 +486,9 @@ local add_target_to_cache = function(targets_map, target, target_details, projec
     local resolution_string = create_target_name_resolution_string(target_location, project_location)
 
     local target_name = target
-    if #target + 1 == #resolution_string then
-      target_name = resolution_string
-    end
+    -- if #target + 1 == #resolution_string then
+    --   target_name = resolution_string
+    -- end
     table.insert(M._collisions[project_root][target],
       {
         target_name = target_name,
