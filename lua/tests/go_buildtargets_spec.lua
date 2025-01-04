@@ -273,6 +273,9 @@ describe('Resolve Collisions:', function()
   local add_target_to_cache = buildtargets._add_target_to_cache
 
   it("test case 1 - 3 target name collisions", function()
+    -- "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go"      = generate/error_creator
+    -- "/Users/kkrime/go/src/prj/internal/error_creator.go"                       = prj/internal/error_creator
+    -- "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"  = protoc/internal/error_creator
     local targets_map = {}
 
     local error_creator1 = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" }
@@ -373,6 +376,9 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 2 - expanding target name all the way to the project root", function()
+    -- "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go"  = generate/error_creator
+    -- "/Users/kkrime/go/src/prj/internal/error_creator.go"                        = prj/internal/error_creator
+    -- "/Users/kkrime/go/src/prj/prj/internal/error_creator.go"                    = prj/prj/internal/error_creator
     local targets_map = {}
 
     local error_creator1 = {
@@ -474,6 +480,8 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 3 - expand colliding target name on project root 1", function()
+    -- "/Users/kkrime/go/src/prj/main.go"     = prj
+    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj/prj
     local targets_map = {}
 
     local project_root_target = {
@@ -540,6 +548,82 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 4 - expand colliding target name on project root 2", function()
+    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj/prj
+    -- "/Users/kkrime/go/src/prj/main.go"     = prj
+    local targets_map = {}
+
+    local project_root_target = {
+      idx = 1,
+      location =
+      "/Users/kkrime/go/src/prj/prj/main.go"
+    }
+    add_target_to_cache(targets_map, 'prj', project_root_target, project_root)
+
+    local expected_target_map = {
+      ["prj"] = project_root_target
+    }
+    eq(targets_map, expected_target_map)
+
+    local expected_result = {
+      [project_root] = {
+        ["prj"] = {
+          {
+            target_name = "prj/prj",
+            capture_pattern = ".*/.*",
+            resolution_string = "/prj/prj",
+            target_details = {
+              idx = 1,
+              location = "/Users/kkrime/go/src/prj/prj/main.go"
+            },
+          },
+          {
+            target_name = "prj",
+            capture_pattern = ".*",
+            resolution_string = "/prj",
+            target_details = {
+              idx = 2,
+              location = "/Users/kkrime/go/src/prj/main.go"
+            },
+          }
+        },
+        project_location = "/Users/kkrime/go/src"
+      },
+    }
+
+    local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" }
+    add_target_to_cache(targets_map, 'prj', prj, project_root)
+    eq(buildtargets._collisions, expected_result)
+
+    local final_results = {
+      ["prj/prj"] = {
+        idx = 1,
+        location = "/Users/kkrime/go/src/prj/prj/main.go"
+      },
+      ["prj"] = {
+        idx = 2,
+        location = "/Users/kkrime/go/src/prj/main.go"
+      },
+      menu = {
+        height = 2,
+        items = { "prj/prj", "prj" },
+        width = 7
+      },
+    }
+
+    targets_map[menu] = {
+      height = 2,
+      items = { "prj", "prj" },
+      width = 4
+    }
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
+
+    eq(targets_map, final_results)
+    eq(buildtargets._collisions[project_root], nil)
+  end)
+
+  it("test case 5 - expand colliding target name on project root 3", function()
+    -- "/Users/kkrime/go/src/prj/prj.go"      = prj.go
+    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj
     local targets_map = {}
 
     local project_root_target = {
@@ -613,9 +697,9 @@ describe('Resolve Collisions:', function()
     eq(buildtargets._collisions[project_root], nil)
   end)
 
-  -- -- TODO
-  -- -- this in reverse
-  it("test case 5 - expand colliding target name on project root 3", function()
+  it("test case 6 - expand colliding target name on project root 4", function()
+    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj
+    -- "/Users/kkrime/go/src/prj/prj.go"      = prj.go
     local targets_map = {}
 
     local project_root_target = {
@@ -688,83 +772,12 @@ describe('Resolve Collisions:', function()
     eq(buildtargets._collisions[project_root], nil)
   end)
 
-  it("test case 6 - expand colliding target name on project root 4", function()
-    local targets_map = {}
 
-    local project_root_target = {
-      idx = 1,
-      location =
-      "/Users/kkrime/go/src/prj/prj/main.go"
-    }
-    add_target_to_cache(targets_map, 'prj', project_root_target, project_root)
-
-    local expected_target_map = {
-      ["prj"] = project_root_target
-    }
-    eq(targets_map, expected_target_map)
-
-    local expected_result = {
-      [project_root] = {
-        ["prj"] = {
-          {
-            target_name = "prj/prj",
-            capture_pattern = ".*/.*",
-            resolution_string = "/prj/prj",
-            target_details = {
-              idx = 1,
-              location = "/Users/kkrime/go/src/prj/prj/main.go"
-            },
-          },
-          {
-            target_name = "prj",
-            capture_pattern = ".*",
-            resolution_string = "/prj",
-            target_details = {
-              idx = 2,
-              location = "/Users/kkrime/go/src/prj/main.go"
-            },
-          }
-        },
-        project_location = "/Users/kkrime/go/src"
-      },
-    }
-
-    local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" }
-    add_target_to_cache(targets_map, 'prj', prj, project_root)
-    eq(buildtargets._collisions, expected_result)
-
-    local final_results = {
-      ["prj/prj"] = {
-        idx = 1,
-        location = "/Users/kkrime/go/src/prj/prj/main.go"
-      },
-      ["prj"] = {
-        idx = 2,
-        location = "/Users/kkrime/go/src/prj/main.go"
-      },
-      menu = {
-        height = 2,
-        items = { "prj/prj", "prj" },
-        width = 7
-      },
-    }
-
-    targets_map[menu] = {
-      height = 2,
-      items = { "prj", "prj" },
-      width = 4
-    }
-    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
-
-    eq(targets_map, final_results)
-    eq(buildtargets._collisions[project_root], nil)
-  end)
-  -- TODO
-  -- /Users/kkrime/go/src/prj/internal/api/assets/generator.go
-  -- /Users/kkrime/go/src/prj/internal/api/assets/generator/main.go
-  -- /Users/kkrime/go/src/prj/api/assets/generator.go
-  -- /Users/kkrime/go/src/prj/api/assets/generator/main.go
-  it("test case 7 - expand colliding target name", function()
+  it("test case 7 - expand 4 colliding target name", function()
+    -- /Users/kkrime/go/src/prj/internal/api/assets/generator.go      = internal/api/assets/generator.go
+    -- /Users/kkrime/go/src/prj/internal/api/assets/generator/main.go = internal/api/assets/generator
+    -- /Users/kkrime/go/src/prj/external/api/assets/generator.go      = external/api/assets/generator
+    -- /Users/kkrime/go/src/prj/external/api/assets/generator/main.go = external/api/assets/generator.go
     local targets_map = {}
 
     local generator1 = {
