@@ -51,8 +51,7 @@ end
 local menu_visible_for_proj = nil
 local menu_winnr = nil
 local menu_coroutines = {}
--- local show_menu = function(co)
-function show_menu(co)
+local show_menu = function(co)
   local project_root = get_project_root()
 
   -- if satement below needed for race condition
@@ -178,20 +177,18 @@ function M.select_buildtarget(co)
     end
   end
 
-  local targets_names = M._cache[project_root][menu][items]
-  -- if only one build target, send build target location
-  if #targets_names == 1 then
-    local target_name = targets_names[1]
-    M._current_buildtarget[project_root] = target_name
-    local target_location = M._cache[project_root][target_name][location]
-    if co then
+  if co then
+    local targets_names = M._cache[project_root][menu][items]
+    if #targets_names == 1 then
+      -- if only one build target, send build target location
+      local target_name = targets_names[1]
+      M._current_buildtarget[project_root] = target_name
+      local target_location = M._cache[project_root][target_name][location]
       vim.schedule(function()
         coroutine.resume(co, target_location, nil)
       end)
-    else
-      vim.notify("only one build target available: " .. target_name, vim.log.levels.INFO)
+      return
     end
-    return
   end
 
   -- if multiple build targets, then launch menu and ask user to select
@@ -316,6 +313,7 @@ local refresh_project_buildtargets = function(refresh, project_root)
   M._current_buildtarget[project_root] = updated_current_buildtarget
   refresh[menu] = { items = menu_items, width = menu_width, height = menu_height }
 
+  M._cache[project_root] = refresh
   -- TODO think about this...
   if not vim.deep_equal(backup_menu_items, refresh[menu][items]) then
     save_buildtargets()
@@ -357,18 +355,13 @@ local resolve_target_name_collision = function(target, target_details, project_r
   local project_location              = collisions.project_location
   local new_target_resolution_string  = create_target_name_resolution_string(target_details[location], project_location)
 
-  local new_target_name               = target
-  -- if #target + 1 == #new_target_resolution_string then
-  --   new_target_name = new_target_resolution_string
-  -- end
-
   local new_target_resolution_details = {
-    target_name = new_target_name,
+    target_name = target,
     target_details = target_details,
     resolution_string = new_target_resolution_string,
     capture_pattern = '.*'
   }
-  -- local new_target_name               = new_target_resolution_details.target_name
+  local new_target_name               = new_target_resolution_details.target_name
 
   for _, target_resolution_details in ipairs(collisions[target]) do
     local target_name = target_resolution_details.target_name
@@ -485,13 +478,9 @@ local add_target_to_cache = function(targets_map, target, target_details, projec
     local target_details = targets_map[target]
     local resolution_string = create_target_name_resolution_string(target_location, project_location)
 
-    local target_name = target
-    -- if #target + 1 == #resolution_string then
-    --   target_name = resolution_string
-    -- end
     table.insert(M._collisions[project_root][target],
       {
-        target_name = target_name,
+        target_name = target,
         target_details = target_details,
         resolution_string = resolution_string,
         capture_pattern = '.*'
@@ -586,9 +575,10 @@ function scan_project(project_root, bufnr)
     if M._cache[project_root] then
       -- this is a refresh
       refresh_project_buildtargets(targets, project_root)
+    else
+      M._cache[project_root] = targets
     end
     -- vim.notify(vim.inspect({ "targets", targets = targets }))
-    M._cache[project_root] = targets
   else
     M._cache[project_root] = nil
     M._current_buildtarget[project_root] = nil
