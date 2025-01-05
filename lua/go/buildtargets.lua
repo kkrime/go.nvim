@@ -1,12 +1,7 @@
-local save_path = vim.fn.expand("$HOME/.go_buildtargets.json")
+local save_location = vim.fn.expand("$HOME/.go_buildtargets.json")
 local popup = require("plenary.popup")
 
 local get_project_root
-
-local M = {}
-M._collisions = {}
-M._cache = {}
-M._current_buildtarget = {}
 
 local menu = 'menu'
 local items = 'items'
@@ -14,10 +9,25 @@ local height = 'height'
 local idx = 'idx'
 local location = 'location'
 
+local M = {}
+
+---@type cache
+M._cache = {}
+
+---@type current_buildtargets
+M._current_buildtargets = {}
+
+---@type collisions
+M._collisions = {}
+
 function M.setup(cfg)
   if cfg and cfg.get_project_root_func then
-    get_project_root = cfg.get_project_root_func
-    -- TODO add save_path
+    local get_project_root_func = cfg.get_project_root_func
+    assert(type(get_project_root_func) == "function", "buildtargets: get_project_root_func must be a function")
+    get_project_root = get_project_root_func
+    if cfg.buildtargets_save_location then
+      save_location = cfg.buildtargets_save_location
+    end
     load_buildtargets()
   end
 end
@@ -28,7 +38,7 @@ end
 
 function M.get_current_buildtarget()
   local project_root = get_project_root()
-  local current_target = M._current_buildtarget[project_root]
+  local current_target = M._current_buildtargets[project_root]
   if current_target then
     if #M._cache[project_root][menu][items] > 1 then
       return current_target
@@ -157,7 +167,7 @@ end
 
 function M.get_current_buildtarget_location()
   local project_root = get_project_root()
-  local current_target = M._current_buildtarget[project_root]
+  local current_target = M._current_buildtargets[project_root]
   if current_target then
     local buildtarget_location = M._cache[project_root][current_target][location]
     return buildtarget_location
@@ -182,7 +192,7 @@ function M.select_buildtarget(co)
     if #targets_names == 1 then
       -- if only one build target, send build target location
       local target_name = targets_names[1]
-      M._current_buildtarget[project_root] = target_name
+      M._current_buildtargets[project_root] = target_name
       local target_location = M._cache[project_root][target_name][location]
       vim.schedule(function()
         coroutine.resume(co, target_location, nil)
@@ -196,8 +206,8 @@ function M.select_buildtarget(co)
 end
 
 function update_buildtarget_map(project_root, selection)
-  local current_buildtarget_backup = M._current_buildtarget[project_root]
-  M._current_buildtarget[project_root] = selection
+  local current_buildtarget_backup = M._current_buildtargets[project_root]
+  M._current_buildtargets[project_root] = selection
 
   local selection_idx = M._cache[project_root][selection][idx]
   if selection_idx == 1 then
@@ -253,7 +263,7 @@ local refresh_project_buildtargets = function(refresh, project_root)
 
   local updated_current_buildtarget
   local current_buildtarget_location
-  local current_buildtarget = M._current_buildtarget[project_root]
+  local current_buildtarget = M._current_buildtargets[project_root]
   if current_buildtarget then
     current_buildtarget_location = original[current_buildtarget][location]:match('^(.*)/.*$')
   end
@@ -310,7 +320,7 @@ local refresh_project_buildtargets = function(refresh, project_root)
     end
   end
 
-  M._current_buildtarget[project_root] = updated_current_buildtarget
+  M._current_buildtargets[project_root] = updated_current_buildtarget
   refresh[menu] = { items = menu_items, width = menu_width, height = menu_height }
 
   M._cache[project_root] = refresh
@@ -584,7 +594,7 @@ function scan_project(project_root, bufnr)
     -- vim.notify(vim.inspect({ "targets", targets = targets }))
   else
     M._cache[project_root] = nil
-    M._current_buildtarget[project_root] = nil
+    M._current_buildtargets[project_root] = nil
     return "no build targets found"
   end
 end
@@ -633,10 +643,10 @@ function path_exists(file)
 end
 
 function load_buildtargets()
-  if path_exists(save_path) then
-    read_file(save_path, function(data)
+  if path_exists(save_location) then
+    read_file(save_location, function(data)
       local data = vim.json.decode(data)
-      M._cache, M._current_buildtarget = unpack(data)
+      M._cache, M._current_buildtargets = unpack(data)
       -- vim.notify(vim.inspect({ "reading", cache = M._cache, current_buildtarget = M._current_buildtarget }))
       vim.schedule(function()
         require('lualine').refresh()
@@ -647,10 +657,10 @@ end
 
 function save_buildtargets()
   local data = {
-    M._cache, M._current_buildtarget
+    M._cache, M._current_buildtargets
   }
   local data = vim.json.encode(data)
-  write_file(save_path, data)
+  write_file(save_location, data)
   -- vim.notify(vim.inspect({ "writing", cache = M._cache, current_buildtarget = M._current_buildtarget }))
 end
 

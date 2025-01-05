@@ -7,10 +7,18 @@ local items = 'items'
 local idx = 'idx'
 local location = 'location'
 
+local buildtargets_cfg = {
+  get_project_root_func = function()
+  end,
+  -- override buildtargets_save_location for testing
+  buildtargets_save_location = "",
+}
+local buildtargets = require('go.buildtargets')
+buildtargets.setup(buildtargets_cfg)
+
 local project_root = "/Users/kkrime/go/src/prj"
 
 describe('BuildTarget Refresh:', function()
-  local buildtargets = require('go.buildtargets')
   local refresh_project_buildtargets = buildtargets._refresh_project_buildtargets
 
   it("no change between original and refresh", function()
@@ -42,12 +50,12 @@ describe('BuildTarget Refresh:', function()
     }
     local expected_result = vim.deepcopy(refresh)
 
-    buildtargets._current_buildtarget[project_root] = 'asset_generator'
+    buildtargets._current_buildtargets[project_root] = 'asset_generator'
 
     refresh_project_buildtargets(refresh, project_root)
 
     eq(refresh, expected_result)
-    eq(buildtargets._current_buildtarget[project_root], 'asset_generator')
+    eq(buildtargets._current_buildtargets[project_root], 'asset_generator')
   end)
 
   it("test case 1; refresh returns same targets, but in with completley different target idxs", function()
@@ -79,12 +87,12 @@ describe('BuildTarget Refresh:', function()
     }
     local expected_result = vim.deepcopy(buildtargets._cache[project_root])
 
-    buildtargets._current_buildtarget[project_root] = 'prj'
+    buildtargets._current_buildtargets[project_root] = 'prj'
 
     refresh_project_buildtargets(refresh, project_root)
 
     eq(refresh, expected_result)
-    eq(buildtargets._current_buildtarget[project_root], 'prj')
+    eq(buildtargets._current_buildtargets[project_root], 'prj')
   end)
 
   it("test case 2: refresh returns some more targets than original, with 2 mutal targets in original", function()
@@ -112,11 +120,11 @@ describe('BuildTarget Refresh:', function()
       }
     }
 
-    buildtargets._current_buildtarget[project_root] = nil
+    buildtargets._current_buildtargets[project_root] = nil
 
     refresh_project_buildtargets(refresh, project_root)
 
-    eq(buildtargets._current_buildtarget[project_root], nil)
+    eq(buildtargets._current_buildtargets[project_root], nil)
 
     -- the result should be that refresh contains all the targets, and that the targets that are mutual in
     -- original maintain their priority (in terms of target idxs)
@@ -178,12 +186,12 @@ describe('BuildTarget Refresh:', function()
     }
     local expected_result = vim.deepcopy(refresh)
 
-    buildtargets._current_buildtarget[project_root] = "protoc-gen-prj"
+    buildtargets._current_buildtargets[project_root] = "protoc-gen-prj"
 
     refresh_project_buildtargets(refresh, project_root)
 
     eq(refresh, expected_result)
-    eq(buildtargets._current_buildtarget[project_root], nil)
+    eq(buildtargets._current_buildtargets[project_root], nil)
   end)
 
   it("refresh contains 2 targets that are also in original but with different idxs", function()
@@ -218,12 +226,12 @@ describe('BuildTarget Refresh:', function()
       }
     }
 
-    buildtargets._current_buildtarget[project_root] = 'protoc-gen-prj'
+    buildtargets._current_buildtargets[project_root] = 'protoc-gen-prj'
 
     refresh_project_buildtargets(refresh, project_root)
 
     eq(refresh, expected_result)
-    eq(buildtargets._current_buildtarget[project_root], nil)
+    eq(buildtargets._current_buildtargets[project_root], nil)
   end)
 
   it("refresh contains 2 targets that are also in original but with different idxs and changed file names", function()
@@ -258,18 +266,18 @@ describe('BuildTarget Refresh:', function()
       }
     }
 
-    buildtargets._current_buildtarget[project_root] = 'protoc'
+    buildtargets._current_buildtargets[project_root] = 'protoc'
 
     refresh_project_buildtargets(refresh, project_root)
 
     eq(refresh, expected_result)
-    eq(buildtargets._current_buildtarget[project_root], "protoc-gen-authoption")
+    eq(buildtargets._current_buildtargets[project_root], "protoc-gen-authoption")
   end)
 end)
 
 describe('Resolve Collisions:', function()
   package.loaded['go.buildtargets'] = nil
-  local buildtargets = require('go.buildtargets')
+  -- TODO change save file
   local add_target_to_cache = buildtargets._add_target_to_cache
 
   it("test case 1 - 3 target name collisions", function()
@@ -624,6 +632,7 @@ describe('Resolve Collisions:', function()
   it("test case 5 - expand colliding target name on project root 3", function()
     -- "/Users/kkrime/go/src/prj/prj.go"      = prj.go
     -- "/Users/kkrime/go/src/prj/prj/main.go" = prj
+    -- "/Users/kkrime/go/src/prj/prj/internal/prj/main.go" = prj
     local targets_map = {}
 
     local project_root_target = {
