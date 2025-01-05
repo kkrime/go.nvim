@@ -47,8 +47,157 @@ function M.get_current_buildtarget()
   return nil
 end
 
+local function get_target_name(location)
+  local target_name = location:match("^.*/(.*)%.go$")
+  if target_name ~= "main" then
+    return target_name
+  end
+
+  target_name = location:match("^.*/(.*)/.*$")
+  return target_name
+end
+
+local function scan_project(project_root, bufnr)
+  bufnr = bufnr or 0
+  local ms = require('vim.lsp.protocol').Methods
+  local method = ms.workspace_symbol
+
+  local result = vim.lsp.buf_request_sync(bufnr, method, { query = "main" }, 5000)
+  if not result then
+    return "nil result from Language Server"
+  end
+
+  local menu_items = {}
+  local menu_width = 0
+  local menu_height = 0
+  local targets = {}
+  if result then
+    for _, resss in pairs(result) do
+      for _, ress in pairs(resss) do
+        for _, res in pairs(ress) do
+          if res.name == "main" then
+            -- filter functions only (vlaue 12)
+            if res.kind == 12 then
+              local filelocation = vim.uri_to_fname(res.location.uri)
+
+              if not vim.startswith(filelocation, project_root) then
+                goto continue
+              end
+
+              local close_buffer = false
+              local bufnr = vim.fn.bufnr(filelocation)
+              if bufnr == -1 then
+                vim.api.nvim_command('badd ' .. filelocation)
+                bufnr = vim.fn.bufnr(filelocation)
+                close_buffer = true
+              end
+
+              local parser = vim.treesitter.get_parser(bufnr, "go")
+              local tree = parser:parse()[1]
+
+              -- search for file with 'package main' and 'func main()'
+              local query = vim.treesitter.query.parse(
+                "go",
+                [[
+                  (package_clause
+                    (package_identifier) @main.package)
+                  (function_declaration
+                    name: (identifier) @main.function
+                    parameters: (parameter_list) @main.function.parameters
+                    !result
+                  (#eq? @main.package "main")
+                  (#eq? @main.function "main"))
+                  (#eq? @main.function.parameters "()")
+                ]])
+
+              local ts_query_match = 0
+              for _, _, _, _ in query:iter_captures(tree:root(), bufnr, nil, nil) do
+                ts_query_match = ts_query_match + 1
+              end
+
+              if close_buffer then
+                vim.api.nvim_buf_delete(bufnr, { force = true })
+              end
+
+              if ts_query_match == 3 then
+                menu_height = menu_height + 1
+                local target_name = get_target_name(filelocation)
+                -- targets[target_name] = { idx = menu_height, location = filelocation }
+                M._add_target_to_cache(targets, target_name, { idx = menu_height, location = filelocation })
+                if #target_name > menu_width then
+                  menu_width = #target_name
+                end
+                menu_items[menu_height] = target_name
+              end
+            end
+          end
+          ::continue::
+        end
+      end
+    end
+  end
+  if menu_height > 0 then
+    targets[menu] = { items = menu_items, width = menu_width, height = menu_height }
+    M._add_resolved_target_name_collisions(targets, project_root)
+    if M._cache[project_root] then
+      -- this is a refresh
+      M._refresh_project_buildtargets(targets, project_root)
+    else
+      M._cache[project_root] = targets
+    end
+    -- vim.notify(vim.inspect({ "targets", targets = targets }))
+  else
+    M._cache[project_root] = nil
+    M._current_buildtargets[project_root] = nil
+    return "no build targets found"
+  end
+end
+
+local function update_buildtarget_map(project_root, selection)
+  local current_buildtarget_backup = M._current_buildtargets[project_root]
+  M._current_buildtargets[project_root] = selection
+
+  local selection_idx = M._cache[project_root][selection][idx]
+  if selection_idx == 1 then
+    if not current_buildtarget_backup then
+      save_buildtargets()
+      require('lualine').refresh()
+    end
+    return
+  end
+
+  local selection_backup = M._cache[project_root][selection]
+  selection_backup[idx] = 1
+  M._cache[project_root][selection] = nil
+  M._cache[project_root][menu] = nil
+
+  local menu_items = {}
+  local menu_width = #selection
+  local menu_height = 1
+
+  for target_name, target_details in pairs(M._cache[project_root]) do
+    local target_idx = target_details[idx]
+    if target_idx < selection_idx or target_idx == 2 then
+      target_idx = target_idx + 1
+      target_details[idx] = target_idx
+    end
+    menu_items[target_idx] = target_name
+    menu_height = menu_height + 1
+    if #target_name > menu_width then
+      menu_width = #target_name
+    end
+  end
+  M._cache[project_root][selection] = selection_backup
+  menu_items[1] = selection
+
+  M._cache[project_root][menu] = { items = menu_items, width = menu_width, height = menu_height }
+
+  save_buildtargets()
+  require('lualine').refresh()
+end
+
 -- local flash_menu = function(project_root)
-function flash_menu(project_root)
+local function flash_menu(project_root)
   vim.cmd("set modifiable")
   vim.api.nvim_buf_set_lines(0, 0, -1, false, {})
   vim.cmd('redraw')
@@ -205,50 +354,7 @@ function M.select_buildtarget(co)
   show_menu(co)
 end
 
-function update_buildtarget_map(project_root, selection)
-  local current_buildtarget_backup = M._current_buildtargets[project_root]
-  M._current_buildtargets[project_root] = selection
-
-  local selection_idx = M._cache[project_root][selection][idx]
-  if selection_idx == 1 then
-    if not current_buildtarget_backup then
-      save_buildtargets()
-      require('lualine').refresh()
-    end
-    return
-  end
-
-  local selection_backup = M._cache[project_root][selection]
-  selection_backup[idx] = 1
-  M._cache[project_root][selection] = nil
-  M._cache[project_root][menu] = nil
-
-  local menu_items = {}
-  local menu_width = #selection
-  local menu_height = 1
-
-  for target_name, target_details in pairs(M._cache[project_root]) do
-    local target_idx = target_details[idx]
-    if target_idx < selection_idx or target_idx == 2 then
-      target_idx = target_idx + 1
-      target_details[idx] = target_idx
-    end
-    menu_items[target_idx] = target_name
-    menu_height = menu_height + 1
-    if #target_name > menu_width then
-      menu_width = #target_name
-    end
-  end
-  M._cache[project_root][selection] = selection_backup
-  menu_items[1] = selection
-
-  M._cache[project_root][menu] = { items = menu_items, width = menu_width, height = menu_height }
-
-  save_buildtargets()
-  require('lualine').refresh()
-end
-
-function match_location(original_dir, refresh_dir)
+local function match_location(original_dir, refresh_dir)
   local original_loc = original_dir:match('^(.*)/.*$')
   local refresh_loc = refresh_dir:match('^(.*)/.*$')
   if original_loc == refresh_loc then
@@ -258,7 +364,7 @@ function match_location(original_dir, refresh_dir)
 end
 
 -- TODO rename this
-local refresh_project_buildtargets = function(refresh, project_root)
+M._refresh_project_buildtargets = function(refresh, project_root)
   local original = M._cache[project_root]
 
   local updated_current_buildtarget
@@ -445,7 +551,7 @@ local resolve_target_name_collision = function(target, target_details, project_r
   -- vim.notify(vim.inspect({ collisions = collisions }))
 end
 
-local add_resolved_target_name_collisions = function(targets_map, project_root)
+M._add_resolved_target_name_collisions = function(targets_map, project_root)
   if M._collisions[project_root] then
     M._collisions[project_root]['project_location'] = nil
     for target, target_resolution_details in pairs(M._collisions[project_root]) do
@@ -474,7 +580,7 @@ local get_project_location = function(project_root)
   return project_location
 end
 
-local add_target_to_cache = function(targets_map, target, target_details, project_root)
+M._add_target_to_cache = function(targets_map, target, target_details, project_root)
   local target_name_collision = targets_map[target]
 
   if not target_name_collision then
@@ -503,111 +609,7 @@ local add_target_to_cache = function(targets_map, target, target_details, projec
   resolve_target_name_collision(target, target_details, project_root)
 end
 
-function scan_project(project_root, bufnr)
-  bufnr = bufnr or 0
-  local ms = require('vim.lsp.protocol').Methods
-  local method = ms.workspace_symbol
 
-  local result = vim.lsp.buf_request_sync(bufnr, method, { query = "main" }, 5000)
-  if not result then
-    return "nil result from Language Server"
-  end
-
-  local menu_items = {}
-  local menu_width = 0
-  local menu_height = 0
-  local targets = {}
-  if result then
-    for _, resss in pairs(result) do
-      for _, ress in pairs(resss) do
-        for _, res in pairs(ress) do
-          if res.name == "main" then
-            -- filter functions only (vlaue 12)
-            if res.kind == 12 then
-              local filelocation = vim.uri_to_fname(res.location.uri)
-
-              if not vim.startswith(filelocation, project_root) then
-                goto continue
-              end
-
-              local close_buffer = false
-              local bufnr = vim.fn.bufnr(filelocation)
-              if bufnr == -1 then
-                vim.api.nvim_command('badd ' .. filelocation)
-                bufnr = vim.fn.bufnr(filelocation)
-                close_buffer = true
-              end
-
-              local parser = vim.treesitter.get_parser(bufnr, "go")
-              local tree = parser:parse()[1]
-
-              -- search for file with 'package main' and 'func main()'
-              local query = vim.treesitter.query.parse(
-                "go",
-                [[
-                  (package_clause
-                    (package_identifier) @main.package)
-                  (function_declaration
-                    name: (identifier) @main.function
-                    parameters: (parameter_list) @main.function.parameters
-                    !result
-                  (#eq? @main.package "main")
-                  (#eq? @main.function "main"))
-                  (#eq? @main.function.parameters "()")
-                ]])
-
-              local ts_query_match = 0
-              for _, _, _, _ in query:iter_captures(tree:root(), bufnr, nil, nil) do
-                ts_query_match = ts_query_match + 1
-              end
-
-              if close_buffer then
-                vim.api.nvim_buf_delete(bufnr, { force = true })
-              end
-
-              if ts_query_match == 3 then
-                menu_height = menu_height + 1
-                local target_name = get_target_name(filelocation)
-                -- targets[target_name] = { idx = menu_height, location = filelocation }
-                add_target_to_cache(targets, target_name, { idx = menu_height, location = filelocation })
-                if #target_name > menu_width then
-                  menu_width = #target_name
-                end
-                menu_items[menu_height] = target_name
-              end
-            end
-          end
-          ::continue::
-        end
-      end
-    end
-  end
-  if menu_height > 0 then
-    targets[menu] = { items = menu_items, width = menu_width, height = menu_height }
-    add_resolved_target_name_collisions(targets, project_root)
-    if M._cache[project_root] then
-      -- this is a refresh
-      refresh_project_buildtargets(targets, project_root)
-    else
-      M._cache[project_root] = targets
-    end
-    -- vim.notify(vim.inspect({ "targets", targets = targets }))
-  else
-    M._cache[project_root] = nil
-    M._current_buildtargets[project_root] = nil
-    return "no build targets found"
-  end
-end
-
-function get_target_name(location)
-  local target_name = location:match("^.*/(.*)%.go$")
-  if target_name ~= "main" then
-    return target_name
-  end
-
-  target_name = location:match("^.*/(.*)/.*$")
-  return target_name
-end
 
 local uv = vim.loop
 local write_file = function(path, content)
@@ -663,12 +665,5 @@ function save_buildtargets()
   write_file(save_location, data)
   -- vim.notify(vim.inspect({ "writing", cache = M._cache, current_buildtarget = M._current_buildtarget }))
 end
-
-M._save_buildtargets = save_buildtargets
-M._load_buildtargets = load_buildtargets
-M._add_resolved_target_name_collisions = add_resolved_target_name_collisions
-
-M._refresh_project_buildtargets = refresh_project_buildtargets
-M._add_target_to_cache = add_target_to_cache
 
 return M
