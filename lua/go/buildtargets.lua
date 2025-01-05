@@ -2,6 +2,8 @@ local save_location = vim.fn.expand("$HOME/.go_buildtargets.json")
 local popup = require("plenary.popup")
 
 local get_project_root
+local select_buildtarget_callback
+local close_menu_keys = { '<Esc>' }
 
 local menu = 'menu'
 local items = 'items'
@@ -22,9 +24,20 @@ M._collisions = {}
 
 function M.setup(cfg)
   if cfg and cfg.get_project_root_func then
-    local get_project_root_func = cfg.get_project_root_func
-    assert(type(get_project_root_func) == "function", "buildtargets: get_project_root_func must be a function")
-    get_project_root = get_project_root_func
+    get_project_root = cfg.get_project_root_func
+    assert(type(get_project_root) == "function", "buildtargets: get_project_root_func must be a function")
+
+    select_buildtarget_callback = cfg.select_buildtarget_callback
+    if select_buildtarget_callback then
+      assert(type(select_buildtarget_callback) == "function",
+        "buildtargets: select_buildtarget_callback must be a function")
+    end
+
+    if cfg.close_menu_keys then
+      close_menu_keys = cfg.close_menu_keys
+      assert(type(close_menu_keys) == "table", "buildtargets: close_menu_keys be a table")
+    end
+
     if cfg.buildtargets_save_location then
       save_location = cfg.buildtargets_save_location
     end
@@ -34,6 +47,18 @@ end
 
 function M.use_buildtargets()
   return get_project_root ~= nil
+end
+
+local function update_current_buildtarget(buildtarget, project_root)
+  local current_buildtarget_backup = M._current_buildtargets[project_root]
+  if current_buildtarget_backup ~= buildtarget then
+    M._current_buildtargets[project_root] = buildtarget
+    if select_buildtarget_callback then
+      select_buildtarget_callback()
+    end
+    return true
+  end
+  return false
 end
 
 function M.get_current_buildtarget()
@@ -144,24 +169,24 @@ local function scan_project(project_root, bufnr)
       M._refresh_project_buildtargets(targets, project_root)
     else
       M._cache[project_root] = targets
+      save_buildtargets()
     end
     -- vim.notify(vim.inspect({ "targets", targets = targets }))
   else
     M._cache[project_root] = nil
+    -- TODO think about this
     M._current_buildtargets[project_root] = nil
     return "no build targets found"
   end
 end
 
 local function update_buildtarget_map(project_root, selection)
-  local current_buildtarget_backup = M._current_buildtargets[project_root]
-  M._current_buildtargets[project_root] = selection
+  local current_buildtarget_changed = update_current_buildtarget(selection, project_root)
 
   local selection_idx = M._cache[project_root][selection][idx]
   if selection_idx == 1 then
-    if not current_buildtarget_backup then
+    if current_buildtarget_changed then
       save_buildtargets()
-      require('lualine').refresh()
     end
     return
   end
@@ -193,7 +218,7 @@ local function update_buildtarget_map(project_root, selection)
   M._cache[project_root][menu] = { items = menu_items, width = menu_width, height = menu_height }
 
   save_buildtargets()
-  require('lualine').refresh()
+  -- require('lualine').refresh()
 end
 
 -- local flash_menu = function(project_root)
@@ -266,7 +291,9 @@ local show_menu = function(co)
   vim.opt.guicursor:append('a:Cursor/lCursor')
 
   -- set Ecs to close menu
-  vim.api.nvim_buf_set_keymap(bufnr, "n", "<Esc>", ":q<CR>", { silent = false })
+  for _, key in pairs(close_menu_keys) do
+    vim.api.nvim_buf_set_keymap(bufnr, "n", key, ":q<CR>", { silent = false })
+  end
 
   local err
 
@@ -312,6 +339,8 @@ local show_menu = function(co)
       menu_visible_for_proj = nil
     end,
   })
+
+  return bufnr
 end
 
 function M.get_current_buildtarget_location()
@@ -341,7 +370,8 @@ function M.select_buildtarget(co)
     if #targets_names == 1 then
       -- if only one build target, send build target location
       local target_name = targets_names[1]
-      M._current_buildtargets[project_root] = target_name
+      -- M._current_buildtargets[project_root] = target_name
+      update_current_buildtarget(target_name, project_root)
       local target_location = M._cache[project_root][target_name][location]
       vim.schedule(function()
         coroutine.resume(co, target_location, nil)
@@ -426,7 +456,8 @@ M._refresh_project_buildtargets = function(refresh, project_root)
     end
   end
 
-  M._current_buildtargets[project_root] = updated_current_buildtarget
+  -- M._current_buildtargets[project_root] = updated_current_buildtarget
+  update_current_buildtarget(updated_current_buildtarget, project_root)
   refresh[menu] = { items = menu_items, width = menu_width, height = menu_height }
 
   M._cache[project_root] = refresh
