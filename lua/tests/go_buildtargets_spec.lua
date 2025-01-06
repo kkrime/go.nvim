@@ -287,6 +287,7 @@ describe('Resolve Collisions:', function()
     local targets_map = {}
 
     local error_creator1 = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" }
+
     add_target_to_cache(targets_map, 'error_creator', error_creator1, project_root)
 
     local expected_target_map = {
@@ -314,8 +315,8 @@ describe('Resolve Collisions:', function()
     }
 
     local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
-    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
 
+    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
     eq(buildtargets._collisions, expected_result)
 
     expected_result = {
@@ -348,8 +349,8 @@ describe('Resolve Collisions:', function()
       location =
       "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"
     }
-    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
 
+    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
@@ -377,8 +378,8 @@ describe('Resolve Collisions:', function()
       items = { "error_creator", "error_creator", "error_creator" },
       width = 13
     }
-    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
 
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
     eq(targets_map, final_results)
     eq(buildtargets._collisions[project_root], nil)
   end)
@@ -394,6 +395,7 @@ describe('Resolve Collisions:', function()
       location =
       "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go"
     }
+
     add_target_to_cache(targets_map, 'error_creator', error_creator1, project_root)
 
     local expected_target_map = {
@@ -421,8 +423,8 @@ describe('Resolve Collisions:', function()
     }
 
     local error_creator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/error_creator.go" }
-    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
 
+    add_target_to_cache(targets_map, 'error_creator', error_creator2, project_root)
     eq(buildtargets._collisions, expected_result)
 
     expected_result = {
@@ -452,8 +454,8 @@ describe('Resolve Collisions:', function()
     }
 
     local error_creator3 = { idx = 3, location = "/Users/kkrime/go/src/prj/prj/internal/error_creator.go" }
-    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
 
+    add_target_to_cache(targets_map, 'error_creator', error_creator3, project_root)
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
@@ -481,8 +483,8 @@ describe('Resolve Collisions:', function()
       items = { "error_creator", "error_creator", "error_creator" },
       width = 13
     }
-    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
 
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
     eq(targets_map, final_results)
     eq(buildtargets._collisions[project_root], nil)
   end)
@@ -492,11 +494,8 @@ describe('Resolve Collisions:', function()
     -- "/Users/kkrime/go/src/prj/prj/main.go" = prj/prj
     local targets_map = {}
 
-    local project_root_target = {
-      idx = 1,
-      location =
-      "/Users/kkrime/go/src/prj/main.go"
-    }
+    local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/main.go" }
+
     add_target_to_cache(targets_map, 'prj', project_root_target, project_root)
 
     local expected_target_map = {
@@ -524,8 +523,8 @@ describe('Resolve Collisions:', function()
     }
 
     local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/prj/main.go" }
-    add_target_to_cache(targets_map, 'prj', prj, project_root)
 
+    add_target_to_cache(targets_map, 'prj', prj, project_root)
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
@@ -560,11 +559,8 @@ describe('Resolve Collisions:', function()
     -- "/Users/kkrime/go/src/prj/main.go"     = prj
     local targets_map = {}
 
-    local project_root_target = {
-      idx = 1,
-      location =
-      "/Users/kkrime/go/src/prj/prj/main.go"
-    }
+    local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/prj/main.go" }
+
     add_target_to_cache(targets_map, 'prj', project_root_target, project_root)
 
     local expected_target_map = {
@@ -599,6 +595,7 @@ describe('Resolve Collisions:', function()
     }
 
     local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/main.go" }
+
     add_target_to_cache(targets_map, 'prj', prj, project_root)
     eq(buildtargets._collisions, expected_result)
 
@@ -623,8 +620,8 @@ describe('Resolve Collisions:', function()
       items = { "prj", "prj" },
       width = 4
     }
-    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
 
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
     eq(targets_map, final_results)
     eq(buildtargets._collisions[project_root], nil)
   end)
@@ -635,11 +632,8 @@ describe('Resolve Collisions:', function()
     -- "/Users/kkrime/go/src/prj/prj/internal/prj/main.go" = prj
     local targets_map = {}
 
-    local project_root_target = {
-      idx = 1,
-      location =
-      "/Users/kkrime/go/src/prj/prj.go"
-    }
+    local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/prj.go" }
+
     add_target_to_cache(targets_map, 'prj', project_root_target, project_root)
 
     local expected_target_map = {
@@ -675,8 +669,8 @@ describe('Resolve Collisions:', function()
     }
 
     local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/prj/main.go" }
-    add_target_to_cache(targets_map, 'prj', prj, project_root)
 
+    add_target_to_cache(targets_map, 'prj', prj, project_root)
     eq(buildtargets._collisions, expected_result)
 
     local final_results = {
@@ -700,8 +694,8 @@ describe('Resolve Collisions:', function()
       items = { "prj", "prj" },
       width = 4
     }
-    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
 
+    buildtargets._add_resolved_target_name_collisions(targets_map, project_root)
     eq(targets_map, final_results)
     eq(buildtargets._collisions[project_root], nil)
   end)
@@ -711,11 +705,8 @@ describe('Resolve Collisions:', function()
     -- "/Users/kkrime/go/src/prj/prj.go"      = prj.go
     local targets_map = {}
 
-    local project_root_target = {
-      idx = 1,
-      location =
-      "/Users/kkrime/go/src/prj/prj/main.go"
-    }
+    local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/prj/main.go" }
+
     add_target_to_cache(targets_map, 'prj', project_root_target, project_root)
 
     local expected_target_map = {
@@ -751,6 +742,7 @@ describe('Resolve Collisions:', function()
     }
 
     local prj = { idx = 2, location = "/Users/kkrime/go/src/prj/prj.go" }
+
     add_target_to_cache(targets_map, 'prj', prj, project_root)
     eq(buildtargets._collisions, expected_result)
 
@@ -789,11 +781,8 @@ describe('Resolve Collisions:', function()
     -- /Users/kkrime/go/src/prj/external/api/assets/generator/main.go = external/api/assets/generator.go
     local targets_map = {}
 
-    local generator1 = {
-      idx = 1,
-      location =
-      "/Users/kkrime/go/src/prj/internal/api/assets/generator.go"
-    }
+    local generator1 = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator.go" }
+
     add_target_to_cache(targets_map, 'generator', generator1, project_root)
 
     local expected_target_map = {
@@ -826,6 +815,7 @@ describe('Resolve Collisions:', function()
     }
 
     local generator2 = { idx = 2, location = "/Users/kkrime/go/src/prj/internal/api/assets/generator/main.go" }
+
     add_target_to_cache(targets_map, 'generator', generator2, project_root)
     eq(buildtargets._collisions, expected_result)
 
@@ -862,6 +852,7 @@ describe('Resolve Collisions:', function()
     }
 
     local generator3 = { idx = 3, location = "/Users/kkrime/go/src/prj/external/api/assets/generator/main.go" }
+
     add_target_to_cache(targets_map, 'generator', generator3, project_root)
     eq(buildtargets._collisions, expected_result)
 
@@ -907,6 +898,7 @@ describe('Resolve Collisions:', function()
     }
 
     local generator4 = { idx = 4, location = "/Users/kkrime/go/src/prj/external/api/assets/generator.go" }
+
     add_target_to_cache(targets_map, 'generator', generator4, project_root)
     eq(buildtargets._collisions, expected_result)
 

@@ -45,10 +45,18 @@ function M.setup(cfg)
   end
 end
 
+--- Checks if buildtargets should be used or not
+---
+---@return boolean # true if buildtargest should be used, false if buildtargets should not be used
 function M.use_buildtargets()
   return get_project_root ~= nil
 end
 
+--- updates the current_buildtarget
+---
+---@param buildtarget target_name
+---@param project_root project_root
+---@return boolean # if buildtarget updated to new value, false if buildtraget already set to buildtarget
 local function update_current_buildtarget(buildtarget, project_root)
   local current_buildtarget_backup = M._current_buildtargets[project_root]
   if current_buildtarget_backup ~= buildtarget then
@@ -61,6 +69,10 @@ local function update_current_buildtarget(buildtarget, project_root)
   return false
 end
 
+--- returns the current buildtarget
+--- if there is only one buildtarget for a project, will return nil
+---
+--- @return (target_name|nil)
 function M.get_current_buildtarget()
   local project_root = get_project_root()
   local current_target = M._current_buildtargets[project_root]
@@ -82,7 +94,7 @@ local function get_target_name(location)
   return target_name
 end
 
-local function isFileATarget(filelocation, project_root)
+local function is_file_a_target(filelocation)
   local close_buffer = false
   local bufnr = vim.fn.bufnr(filelocation)
   if bufnr == -1 then
@@ -150,7 +162,7 @@ local function get_project_targets(project_root, bufnr)
                 goto continue
               end
 
-              if isFileATarget(filelocation, project_root) then
+              if is_file_a_target(filelocation) then
                 menu_height = menu_height + 1
                 local target_name = get_target_name(filelocation)
                 M._add_target_to_cache(targets, target_name, { idx = menu_height, location = filelocation })
@@ -613,7 +625,7 @@ M._add_resolved_target_name_collisions = function(targets_map, project_root)
 end
 
 -- TODO add description
-local get_project_location = function(project_root)
+local function get_project_location(project_root)
   local project_location = project_root:match('^(.*)/.+/*$')
   return project_location
 end

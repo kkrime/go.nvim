@@ -3,10 +3,11 @@ error('Cannot require a meta file')
 
 ---@alias project_root string this is the root of the project
 ---@alias target_name string this is the display name for the target
+---@alias location string this is the display name for the target
 
 ---@class target_details
 ---@field idx integer this is the position on the menu
----@field location string this is the actual location of the build target file e.g main.go
+---@field location location this is the actual location of the build target file e.g main.go
 
 ---@class menu
 ---@field items target_name[] these are the items that will appear on the menu
