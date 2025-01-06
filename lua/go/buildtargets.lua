@@ -82,7 +82,49 @@ local function get_target_name(location)
   return target_name
 end
 
-local function scan_project(project_root, bufnr)
+local function isFileATarget(filelocation, project_root)
+  local close_buffer = false
+  local bufnr = vim.fn.bufnr(filelocation)
+  if bufnr == -1 then
+    vim.api.nvim_command('badd ' .. filelocation)
+    bufnr = vim.fn.bufnr(filelocation)
+    close_buffer = true
+  end
+
+  local parser = vim.treesitter.get_parser(bufnr, "go")
+  local tree = parser:parse()[1]
+
+  -- search for file with 'package main' and 'func main()'
+  local query = vim.treesitter.query.parse(
+    "go",
+    [[
+      (package_clause
+        (package_identifier) @main.package)
+      (function_declaration
+        name: (identifier) @main.function
+        parameters: (parameter_list) @main.function.parameters
+        !result
+      (#eq? @main.package "main")
+      (#eq? @main.function "main"))
+      (#eq? @main.function.parameters "()")
+    ]])
+
+  local ts_query_match = 0
+  for _, _, _, _ in query:iter_captures(tree:root(), bufnr, nil, nil) do
+    ts_query_match = ts_query_match + 1
+  end
+
+  if close_buffer then
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end
+
+  if ts_query_match == 3 then
+    return true
+  end
+  return false
+end
+
+local function get_project_targets(project_root, bufnr)
   bufnr = bufnr or 0
   local ms = require('vim.lsp.protocol').Methods
   local method = ms.workspace_symbol
@@ -104,50 +146,13 @@ local function scan_project(project_root, bufnr)
             -- filter functions only (vlaue 12)
             if res.kind == 12 then
               local filelocation = vim.uri_to_fname(res.location.uri)
-
               if not vim.startswith(filelocation, project_root) then
                 goto continue
               end
 
-              local close_buffer = false
-              local bufnr = vim.fn.bufnr(filelocation)
-              if bufnr == -1 then
-                vim.api.nvim_command('badd ' .. filelocation)
-                bufnr = vim.fn.bufnr(filelocation)
-                close_buffer = true
-              end
-
-              local parser = vim.treesitter.get_parser(bufnr, "go")
-              local tree = parser:parse()[1]
-
-              -- search for file with 'package main' and 'func main()'
-              local query = vim.treesitter.query.parse(
-                "go",
-                [[
-                  (package_clause
-                    (package_identifier) @main.package)
-                  (function_declaration
-                    name: (identifier) @main.function
-                    parameters: (parameter_list) @main.function.parameters
-                    !result
-                  (#eq? @main.package "main")
-                  (#eq? @main.function "main"))
-                  (#eq? @main.function.parameters "()")
-                ]])
-
-              local ts_query_match = 0
-              for _, _, _, _ in query:iter_captures(tree:root(), bufnr, nil, nil) do
-                ts_query_match = ts_query_match + 1
-              end
-
-              if close_buffer then
-                vim.api.nvim_buf_delete(bufnr, { force = true })
-              end
-
-              if ts_query_match == 3 then
+              if isFileATarget(filelocation, project_root) then
                 menu_height = menu_height + 1
                 local target_name = get_target_name(filelocation)
-                -- targets[target_name] = { idx = menu_height, location = filelocation }
                 M._add_target_to_cache(targets, target_name, { idx = menu_height, location = filelocation })
                 if #target_name > menu_width then
                   menu_width = #target_name
@@ -176,11 +181,13 @@ local function scan_project(project_root, bufnr)
     M._cache[project_root] = nil
     -- TODO think about this
     M._current_buildtargets[project_root] = nil
+    -- TODO think about this
+    save_buildtargets()
     return "no build targets found"
   end
 end
 
-local function update_buildtarget_map(project_root, selection)
+local function update_buildtarget_map(selection, project_root)
   local current_buildtarget_changed = update_current_buildtarget(selection, project_root)
 
   local selection_idx = M._cache[project_root][selection][idx]
@@ -276,7 +283,7 @@ local show_menu = function(co)
     callback = function(_, sel)
       local selection = vim.api.nvim_get_current_line()
       user_selection = M._cache[project_root][selection][location]
-      update_buildtarget_map(project_root, selection)
+      update_buildtarget_map(selection, project_root)
     end
   })
 
@@ -302,7 +309,7 @@ local show_menu = function(co)
     vim.cmd("set modifiable")
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "Refreshing..." })
     vim.cmd('redraw')
-    err = scan_project(project_root, bufnr_called_from)
+    err = get_project_targets(project_root, bufnr_called_from)
     if err then
       vim.api.nvim_win_close(menu_winnr, true)
       vim.notify("error refreshing build targets: " .. err, vim.log.levels.ERROR)
@@ -358,7 +365,7 @@ function M.select_buildtarget(co)
   local project_root = get_project_root()
   if not M._cache[project_root] then
     -- project_root hasn't been scanned yet
-    local err = scan_project(project_root)
+    local err = get_project_targets(project_root)
     if err then
       vim.notify("error finding build targets: " .. err, vim.log.levels.ERROR)
       return nil, err
