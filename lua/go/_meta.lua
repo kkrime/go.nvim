@@ -2,12 +2,17 @@
 error('Cannot require a meta file')
 
 ---@alias project_root string this is the root of the project
----@alias target_name string this is the display name for the target
----@alias location string this is the display name for the target
+
+--- the target name is the display name for the target
+--- target name is either:
+--- 1. the folder name the target file is in if the target file is main.go
+--- 2. the name of the target file with out the file extension
+---@alias target_name string
+---@alias location string # this is the actual location of the build target file e.g main.go
 
 ---@class target_details
 ---@field idx integer this is the position on the menu
----@field location location this is the actual location of the build target file e.g main.go
+---@field location location
 
 ---@class menu
 ---@field items target_name[] these are the items that will appear on the menu

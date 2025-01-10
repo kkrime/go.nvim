@@ -56,7 +56,7 @@ end
 ---
 ---@param buildtarget target_name
 ---@param project_root project_root
----@return boolean # if buildtarget updated to new value, false if buildtraget already set to buildtarget
+---@return boolean # if buildtarget updated to new value, false if current buildtraget already set to buildtarget
 local function update_current_buildtarget(buildtarget, project_root)
   local current_buildtarget_backup = M._current_buildtargets[project_root]
   if current_buildtarget_backup ~= buildtarget then
@@ -70,9 +70,8 @@ local function update_current_buildtarget(buildtarget, project_root)
 end
 
 --- returns the current buildtarget
---- if there is only one buildtarget for a project, will return nil
 ---
---- @return (target_name|nil)
+--- @return (target_name|nil) # returns current buildtarget, if there is only one or no buildtarget for a project, will return nil
 function M.get_current_buildtarget()
   local project_root = get_project_root()
   local current_target = M._current_buildtargets[project_root]
@@ -84,22 +83,29 @@ function M.get_current_buildtarget()
   return nil
 end
 
+--- gives the target name for a given target location
+---
+---@param location location
+---@return target_name
 local function get_target_name(location)
   local target_name = location:match("^.*/(.*)%.go$")
   if target_name ~= "main" then
     return target_name
   end
-
   target_name = location:match("^.*/(.*)/.*$")
   return target_name
 end
 
-local function is_file_a_target(filelocation)
+--- checks if given file is a target i.e goes it contain 'package main' and 'func main()'
+---
+---@param file_location string
+---@return boolean # true if file_location is a target
+local function is_file_a_target(file_location)
   local close_buffer = false
-  local bufnr = vim.fn.bufnr(filelocation)
+  local bufnr = vim.fn.bufnr(file_location)
   if bufnr == -1 then
-    vim.api.nvim_command('badd ' .. filelocation)
-    bufnr = vim.fn.bufnr(filelocation)
+    vim.api.nvim_command('badd ' .. file_location)
+    bufnr = vim.fn.bufnr(file_location)
     close_buffer = true
   end
 
@@ -136,7 +142,13 @@ local function is_file_a_target(filelocation)
   return false
 end
 
-local function get_project_targets(project_root, bufnr)
+--- Searches project to find build targets
+--- will update buildtargets in M._cache
+---
+--- @param bufnr number # bufnr of a buffer with a file from the project open
+--- @param project_root project_root
+--- @return string # nil if successful, string with error message if error
+local function get_project_targets(bufnr, project_root)
   bufnr = bufnr or 0
   local ms = require('vim.lsp.protocol').Methods
   local method = ms.workspace_symbol
@@ -199,6 +211,12 @@ local function get_project_targets(project_root, bufnr)
   end
 end
 
+--- updates M._cache order when a build target is selected
+--- the newly selected build target is set to M._cache[project_root][idx] = 1
+--- and will now be on displayed as the first item on the menu
+---
+---@param selection target_name # the selected build target
+---@param project_root project_root
 local function update_buildtarget_map(selection, project_root)
   local current_buildtarget_changed = update_current_buildtarget(selection, project_root)
 
@@ -240,7 +258,12 @@ local function update_buildtarget_map(selection, project_root)
   -- require('lualine').refresh()
 end
 
--- local flash_menu = function(project_root)
+--- momentarily sets the menu to blank for 20ms
+--- then re-populates the the menu to create a 'flash'
+--- this gives the user feedback that a request has completed,
+--- but there is no change to the menu
+---
+---@param project_root project_root
 local function flash_menu(project_root)
   vim.cmd("set modifiable")
   vim.api.nvim_buf_set_lines(0, 0, -1, false, {})
@@ -254,6 +277,11 @@ end
 local menu_visible_for_proj = nil
 local menu_winnr = nil
 local menu_coroutines = {}
+
+--- displays and populates menu with build targets from M._cache
+--- where the user can select a build target
+---
+---@param co thread
 local show_menu = function(co)
   local project_root = get_project_root()
 
@@ -358,10 +386,11 @@ local show_menu = function(co)
       menu_visible_for_proj = nil
     end,
   })
-
-  return bufnr
 end
 
+--- returns the location of the current build target for the current project
+---
+---@return location location
 function M.get_current_buildtarget_location()
   local project_root = get_project_root()
   local current_target = M._current_buildtargets[project_root]
@@ -372,15 +401,22 @@ function M.get_current_buildtarget_location()
   return nil
 end
 
+--- scans the current project; if only one build target in project
+--- and co is not nil (calling from a thread), then return the only
+--- build target location to the calling thread, else display the menu
+--- and ask user to select the build target
+---
+---@param co thread
+---@return string # nil if successful, string with error message if error
 function M.select_buildtarget(co)
   -- TODO check being called from *.go file
   local project_root = get_project_root()
   if not M._cache[project_root] then
     -- project_root hasn't been scanned yet
-    local err = get_project_targets(project_root)
+    local err = get_project_targets(nil, project_root)
     if err then
       vim.notify("error finding build targets: " .. err, vim.log.levels.ERROR)
-      return nil, err
+      return err
     end
   end
 
@@ -403,17 +439,32 @@ function M.select_buildtarget(co)
   show_menu(co)
 end
 
-local function match_location(original_dir, refresh_dir)
-  local original_loc = original_dir:match('^(.*)/.*$')
-  local refresh_loc = refresh_dir:match('^(.*)/.*$')
+--- checks if two target are the same based on their location
+---
+---@return bool
+local function match_path(original_location, refresh_location)
+  local original_loc = original_location:match('^(.*)/.*$')
+  local refresh_loc = refresh_location:match('^(.*)/.*$')
   if original_loc == refresh_loc then
     return true
   end
   return false
 end
 
--- TODO rename this
-M._refresh_project_buildtargets = function(refresh, project_root)
+--- updates the targets in M._cache[project_root] with targets in new_targets
+--- if there are targets in new_targets not in M._cache[project_root], then
+--- the new targets will be merged into M._cache[project_root]
+---
+--- note:
+--- the updated targets in M._cache[project_root] will be faithful
+--- to the original order of M._cache[project_root]
+--- this includes targets in which the target has changed its name,
+--- but are still the same targets based on their location, their order
+--- will be preserved
+---
+---@param new_targets target_details[] # new targets to be merged into M._cache[project_root]
+---@param project_root project_root
+M._refresh_project_buildtargets = function(new_targets, project_root)
   local original = M._cache[project_root]
 
   local updated_current_buildtarget
@@ -423,47 +474,55 @@ M._refresh_project_buildtargets = function(refresh, project_root)
     current_buildtarget_location = original[current_buildtarget][location]:match('^(.*)/.*$')
   end
 
-  local idxs = {}
+  local new_target_not_in_original_marker = nil
+
+  local pre_existing_target_idxs = {}
   local backup_menu_items = original[menu][items]
   original[menu] = nil
-  refresh[menu] = nil
-  for _, refresh_target_details in pairs(refresh) do
-    local ref_dir = refresh_target_details[location]
-    refresh_target_details[idx] = nil
-    for orig_target_name, orig_target_details in pairs(original) do
-      local orig_dir = orig_target_details[location]
-      if match_location(orig_dir, ref_dir) then
-        refresh_target_details[idx] = orig_target_details[idx]
-        table.insert(idxs, refresh_target_details[idx])
+  new_targets[menu] = nil
+  for _, new_target_details in pairs(new_targets) do
+    local refresh_location = new_target_details[location]
+    new_target_details[idx] = new_target_not_in_original_marker
+    for orig_target_name, original_target_details in pairs(original) do
+      local orig_location = original_target_details[location]
+      if match_path(orig_location, refresh_location) then
+        -- if target exists in original, add to pre_existing_target_idxs
+        -- update the idx to preserve the order
+        new_target_details[idx] = original_target_details[idx]
+        table.insert(pre_existing_target_idxs, new_target_details[idx])
+        -- target found in orignal, remote target from original to improve performance of this for loop
         original[orig_target_name] = nil
         break
       end
     end
   end
 
-  table.sort(idxs)
-
-  local idx_target_change = {}
-  for i = 1, (#idxs) do
-    local idx = idxs[i]
-    idx_target_change[idx] = i
+  -- keep the order of the targets faithful to the orginal
+  table.sort(pre_existing_target_idxs)
+  local pre_existing_targets_idxs_update_map = {}
+  for new_idx = 1, (#pre_existing_target_idxs) do
+    local origina_idx = pre_existing_target_idxs[new_idx]
+    pre_existing_targets_idxs_update_map[origina_idx] = new_idx
   end
 
-  local menu_height = #idxs
+  local menu_height = #pre_existing_target_idxs
   local menu_items = {}
   local menu_width = 0
-  for target_name, target_details in pairs(refresh) do
+  for target_name, target_details in pairs(new_targets) do
     local new_target_idx
     local target_idx = target_details[idx]
-    if not target_idx then
+    if target_idx == new_target_not_in_original_marker then
+      -- this is a new target, not found in original, so append to end of targets
       menu_height = menu_height + 1
       new_target_idx = menu_height
     else
-      new_target_idx = idx_target_change[target_idx]
+      -- target exists in original, so update its idx to preserve/stay faithful to the original order
+      new_target_idx = pre_existing_targets_idxs_update_map[target_idx]
       if current_buildtarget then
         local target_buildtarget = target_details[location]:match('^(.*)/.*$')
         if current_buildtarget_location == target_buildtarget then
           updated_current_buildtarget = target_name
+          -- current target found, set to nil to improve performance
           current_buildtarget = nil
         end
       end
@@ -475,13 +534,12 @@ M._refresh_project_buildtargets = function(refresh, project_root)
     end
   end
 
-  -- M._current_buildtargets[project_root] = updated_current_buildtarget
   update_current_buildtarget(updated_current_buildtarget, project_root)
-  refresh[menu] = { items = menu_items, width = menu_width, height = menu_height }
+  new_targets[menu] = { items = menu_items, width = menu_width, height = menu_height }
 
-  M._cache[project_root] = refresh
+  M._cache[project_root] = new_targets
   -- TODO think about this...
-  if not vim.deep_equal(backup_menu_items, refresh[menu][items]) then
+  if not vim.deep_equal(backup_menu_items, new_targets[menu][items]) then
     save_buildtargets()
   end
 end
@@ -598,7 +656,6 @@ local resolve_target_name_collision = function(target, target_details, project_r
     end
   end
   table.insert(collisions[target], new_target_resolution_details)
-  -- vim.notify(vim.inspect({ collisions = collisions }))
 end
 
 M._add_resolved_target_name_collisions = function(targets_map, project_root)
