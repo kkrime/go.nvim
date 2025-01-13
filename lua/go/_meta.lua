@@ -10,6 +10,13 @@ error('Cannot require a meta file')
 ---@alias target_name string
 ---@alias location string # this is the actual location of the build target file e.g main.go
 
+--- this is the location of the project i.e one folder before the project root
+--- e.g if the project_root was '/User/kkrime/go/src/prj', the project_location would be '/User/kkrime/go/src/'
+---@alias project_location string
+
+-- this is the string which will be used to derive a unique target_name from if there is a collision
+---@alias target_name_resolution_string string
+
 ---@class target_details
 ---@field idx integer this is the position on the menu
 ---@field location location
@@ -23,14 +30,14 @@ error('Cannot require a meta file')
 ---@field [project_root] table<target_name, target_details>
 ---@field menu menu?
 
----@class collision_details
+---@class target_name_resolution_details
 ---@field target_name target_name
 ---@field target_details target_details
----@field resolution_string string this is the string used to create the target_name
+---@field resolution_string target_name_resolution_string this is the string used to create the target_name
 ---@field capture_pattern string this is a regex pattern used to create the target_name from the resolution_string
 
 ---@class collisions
----@field [project_root] table<target_name, collision_details>
+---@field [project_root] table<target_name, target_name_resolution_details
 
 ---@class current_buildtargets
 ---@field [project_root] target_name
