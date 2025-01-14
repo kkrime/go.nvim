@@ -281,9 +281,9 @@ describe('Resolve Collisions:', function()
   local add_target_to_cache = buildtargets._add_target_to_cache
 
   it("test case 1 - 3 target name collisions", function()
-    -- "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go"      = generate/error_creator
-    -- "/Users/kkrime/go/src/prj/internal/error_creator.go"                       = prj/internal/error_creator
-    -- "/Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go"  = protoc/internal/error_creator
+    -- /Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go      = generate/error_creator
+    -- /Users/kkrime/go/src/prj/internal/error_creator.go                       = prj/internal/error_creator
+    -- /Users/kkrime/go/src/prj/internal/protoc/internal/error_creator/main.go  = protoc/internal/error_creator
     local targets_map = {}
 
     local error_creator1 = { idx = 1, location = "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator.go" }
@@ -385,9 +385,9 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 2 - expanding target name all the way to the project root", function()
-    -- "/Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go"  = generate/error_creator
-    -- "/Users/kkrime/go/src/prj/internal/error_creator.go"                        = prj/internal/error_creator
-    -- "/Users/kkrime/go/src/prj/prj/internal/error_creator.go"                    = prj/prj/internal/error_creator
+    -- /Users/kkrime/go/src/prj/internal/zerrors/generate/error_creator/main.go  = generate/error_creator
+    -- /Users/kkrime/go/src/prj/internal/error_creator.go                        = prj/internal/error_creator
+    -- /Users/kkrime/go/src/prj/prj/internal/error_creator.go                    = prj/prj/internal/error_creator
     local targets_map = {}
 
     local error_creator1 = {
@@ -490,8 +490,8 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 3 - expand colliding target name on project root 1", function()
-    -- "/Users/kkrime/go/src/prj/main.go"     = prj
-    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj/prj
+    -- /Users/kkrime/go/src/prj/main.go     = prj
+    -- /Users/kkrime/go/src/prj/prj/main.go = prj/prj
     local targets_map = {}
 
     local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/main.go" }
@@ -555,8 +555,8 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 4 - expand colliding target name on project root 2", function()
-    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj/prj
-    -- "/Users/kkrime/go/src/prj/main.go"     = prj
+    -- /Users/kkrime/go/src/prj/prj/main.go = prj/prj
+    -- /Users/kkrime/go/src/prj/main.go     = prj
     local targets_map = {}
 
     local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/prj/main.go" }
@@ -627,9 +627,8 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 5 - expand colliding target name on project root 3", function()
-    -- "/Users/kkrime/go/src/prj/prj.go"      = prj.go
-    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj
-    -- "/Users/kkrime/go/src/prj/prj/internal/prj/main.go" = prj
+    -- /Users/kkrime/go/src/prj/prj.go      = prj.go
+    -- /Users/kkrime/go/src/prj/prj/main.go = prj
     local targets_map = {}
 
     local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/prj.go" }
@@ -701,8 +700,8 @@ describe('Resolve Collisions:', function()
   end)
 
   it("test case 6 - expand colliding target name on project root 4", function()
-    -- "/Users/kkrime/go/src/prj/prj/main.go" = prj
-    -- "/Users/kkrime/go/src/prj/prj.go"      = prj.go
+    -- /Users/kkrime/go/src/prj/prj/main.go = prj
+    -- /Users/kkrime/go/src/prj/prj.go      = prj.go
     local targets_map = {}
 
     local project_root_target = { idx = 1, location = "/Users/kkrime/go/src/prj/prj/main.go" }

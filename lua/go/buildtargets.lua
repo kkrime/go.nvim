@@ -56,13 +56,13 @@ end
 
 --- updates the current_buildtarget
 ---
----@param buildtarget target_name
+---@param target_name target_name
 ---@param project_root project_root
 ---@return bool # if buildtarget updated to new value, false if current buildtraget already set to buildtarget
-local function update_current_buildtarget(buildtarget, project_root)
+local function update_current_buildtarget(target_name, project_root)
   local current_buildtarget_backup = M._current_buildtargets[project_root]
-  if current_buildtarget_backup ~= buildtarget then
-    M._current_buildtargets[project_root] = buildtarget
+  if current_buildtarget_backup ~= target_name then
+    M._current_buildtargets[project_root] = target_name
     if select_buildtarget_callback then
       select_buildtarget_callback()
     end
@@ -199,6 +199,7 @@ local function get_project_targets(bufnr, project_root)
     if M._cache[project_root] then
       -- this is a refresh
       M._refresh_project_buildtargets(targets, project_root)
+      vim.notify(vim.inspect({ "targets", targets }))
     else
       M._cache[project_root] = targets
       save_buildtargets()
