@@ -161,6 +161,12 @@ return {
     vim.cmd(cmd)
 
     if use_buildtargets then
+      cmd =
+      [[command! -nargs=* -complete=customlist,v:lua.package.loaded.go.package_complete GoBuildTargetSelect | lua require'go.buildtargets'.select_buildtarget()]]
+    end
+    vim.cmd(cmd)
+
+    if use_buildtargets then
       cmd = string.format(
         [[command! -nargs=* -complete=customlist,v:lua.package.loaded.go.package_complete GoBuild :setl makeprg=%s\ build | lua coroutine.wrap(require'go.asyncmake'.make)(<f-args>)]],
         gobin
@@ -188,11 +194,19 @@ return {
       end
     end
 
-    cmd = string.format(
-      [[command! -nargs=* -complete=customlist,v:lua.package.loaded.go.package_complete GoRun   :setl makeprg=%s%s\ run | lua require'go.asyncmake'.make(<f-args>)]],
-      pcmdstr,
-      gobin
-    )
+    if use_buildtargets then
+      cmd = string.format(
+        [[command! -nargs=* -complete=customlist,v:lua.package.loaded.go.package_complete GoRun   :setl makeprg=%s%s\ run | lua coroutine.wrap(require'go.asyncmake'.make)(<f-args>)]],
+        pcmdstr,
+        gobin
+      )
+    else
+      cmd = string.format(
+        [[command! -nargs=* -complete=customlist,v:lua.package.loaded.go.package_complete GoRun   :setl makeprg=%s%s\ run | lua require'go.asyncmake'.make(<f-args>)]],
+        pcmdstr,
+        gobin
+      )
+    end
     utils.log(cmd)
     vim.cmd(cmd)
 
