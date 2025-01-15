@@ -33,7 +33,9 @@ zitadel (project root)/
 │  │  ├─ main.go                    <--
 ```
 Given the above, the `buildtargets` are as follows:
-TODO attach screen shot
+<p align="center">
+<img width="200" alt="Screenshot 2025-01-15 at 12 24 49" src="https://github.com/user-attachments/assets/2ffd66e8-0308-48a0-b1c6-63901dd5bc15" />
+</p>
 
 When you first run `:GoBuild` the menu will pop up and ask you to select a `buildtarget`. 
 When a `buildtarget` is selected, it will become the set `buildtarget` for the project and subsequent calls to `:GoBuild` will automatically build that `buildtarget` without prompting the user with the menu.
@@ -89,3 +91,9 @@ note: that between refreshes the order of the refresh targets will stay faithful
 - the menu will adapt if any of the previous targets are missing in the refresh and maintain the original order
 - if a target is renamed, then it will remain in the place on the menu as it was previously but with its new name
 see `lua/tests/go_buildtargets_spec.lua` for more details
+
+### lualine fun
+<p float="left">
+<img width="500" alt="Screenshot 2025-01-15 at 12 45 24" src="https://github.com/user-attachments/assets/010179e1-e053-4c27-bc9c-cd392a8fe3e4" />
+<img width="500" alt="Screenshot 2025-01-15 at 12 48 09" src="https://github.com/user-attachments/assets/b7b6a7b3-c938-461e-a4cf-9b0c2ad7f85a" />
+</p>
