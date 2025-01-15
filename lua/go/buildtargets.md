@@ -16,7 +16,7 @@ Take for example; `https://github.com/zitadel/zitadel`.
 
 Zitadel has the following `buildtargets`:
 ```
-zitadel (project root)/
+zitadel/     (project root)
 ├─ main.go                          <--
 ├─ internal/
 │  ├─ api/
