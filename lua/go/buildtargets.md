@@ -94,7 +94,6 @@ see `lua/tests/go_buildtargets_spec.lua` for more details
 
 ### lualine fun
 <p float="left">
-<img width="500" alt="Screenshot 2025-01-16 at 17 28 43" src="https://github.com/user-attachments/assets/244ead31-50f6-42f6-8345-ec226c87b74b" />
-<img width="500" alt="Screenshot 2025-01-16 at 17 32 36" src="https://github.com/user-attachments/assets/6d74da67-7036-482e-baae-27ac5fd0e53f" />
-
+<img width="500" alt="Screenshot 2025-01-16 at 17 57 15" src="https://github.com/user-attachments/assets/09d5cead-66a6-44f7-883b-e81bb22b0e73" />
+<img width="500" alt="Screenshot 2025-01-16 at 18 01 34" src="https://github.com/user-attachments/assets/5c948db0-aef4-4b37-b4db-4d80c55c7981" />
 </p>
