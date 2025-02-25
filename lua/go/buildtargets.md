@@ -55,9 +55,9 @@ The name of a `buildtarget` is determined as follows:
 
 In cases where two or more targets have the same name e.g:
 ```
-/Users/kkrime/go/src/zitadel/internal/zerrors/generate/error_creator.go
-/Users/kkrime/go/src/zitadel/internal/error_creator.go
-/Users/kkrime/go/src/zitadel/internal/protoc/internal/error_creator/main.go
+/Users/kkrime/go/src/zitadel/internal/zerrors/generate/error_creator.go      -->  generate/error_creator
+/Users/kkrime/go/src/zitadel/internal/error_creator.go                       -->  zitadel/internal/error_creator
+/Users/kkrime/go/src/zitadel/internal/protoc/internal/error_creator/main.go  -->  protoc/internal/error_creator
 ```
 then the `target names` will expand to include folders in their paths until all the target names are unique and each target is disambiguated.
 For the above example, the `target names` would be:
@@ -76,7 +76,7 @@ will generate the following `target names`
 zitadel
 zitadel.go
 ```
-note: only the non `mian.go` file name will only ever include its file extension
+note: only the non `main.go` file name will only ever include its file extension
 
 ## refreshing the targets
 
