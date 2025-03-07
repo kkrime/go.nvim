@@ -887,6 +887,12 @@ utils.debounce = function(func, ms)
         timer:stop()
         pcall(vim.schedule_wrap(func), unpack(argv))
       end)
+    else
+      timer:stop() -- Stop the currently running timer
+      timer:start(ms, 0, function() -- Restart it with the latest call
+        timer:stop()
+        pcall(vim.schedule_wrap(func), unpack(argv))
+      end)
     end
   end
   return inner, timer
@@ -991,6 +997,18 @@ utils.goenv_mode = function()
   local cmd = 'command -v goenv > /dev/null 2>&1'
   local status = os.execute(cmd)
   return status == 0
+end
+
+utils.yield_for = function(ms)
+  local co = coroutine.running()
+  if not co then
+    utils.log("yield_for() must be called inside a coroutine")
+    return
+  end
+  vim.defer_fn(function()
+    coroutine.resume(co)
+  end, ms)
+  coroutine.yield()
 end
 
 return utils

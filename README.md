@@ -525,13 +525,16 @@ type GoLintComplaining struct{}
 | ------- | ----------- |
 | GoCmt   | Add comment |
 
-## GoModTidy
+## GoMod Commands
 
 | command     | Description                           |
 | ----------- | ------------------------------------- |
 | GoModInit   | run `go mod init` and restart gopls   |
 | GoModTidy   | run `go mod tidy` and restart gopls   |
 | GoModVendor | run `go mod vendor` and restart gopls |
+| GoModWhy    | run `go mod why`  for current module  |
+| GoModDnld   | run `go mod download`  for current module |
+| GoModGraph  | run `go mod graph`                    |
 
 run `go mod tidy` and restart gopls
 
@@ -764,6 +767,7 @@ Configure from lua suggested, The default setup:
 require('go').setup({
 
   disable_defaults = false, -- true|false when true set false to all boolean settings and replace all tables
+  remap_commands = {}, -- Vim commands to remap or disable, e.g. `{ GoFmt = "GoFormat", GoDoc = false }`
   -- settings with {}; string will be set to ''. user need to setup ALL the settings
   -- It is import to set ALL values in your own config if set value to true otherwise the plugin may not work
   go='go', -- go command, can be go[default] or e.g. go1.18beta1
@@ -779,7 +783,7 @@ require('go').setup({
   comment_placeholder = '' ,  -- comment_placeholder your cool placeholder e.g. 󰟓       
   icons = {breakpoint = '🧘', currentpos = '🏃'},  -- setup to `false` to disable icons setup
   verbose = false,  -- output loginf in messages
-  lsp_semantic_highlights = true, -- use highlights from gopls
+  lsp_semantic_highlights = false, -- use highlights from gopls, disable by default as gopls/nvim not compatible
   lsp_cfg = false, -- true: use non-default gopls setup specified in go/lsp.lua
                    -- false: do nothing
                    -- if lsp_cfg is a table, merge table with with non-default gopls setup in go/lsp.lua, e.g.

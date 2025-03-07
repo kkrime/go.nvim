@@ -5,9 +5,10 @@ local vfn = vim.fn
 -- Keep this in sync with README.md
 -- Keep this in sync with doc/go.txt
 _GO_NVIM_CFG = {
-  disable_defaults = false,       -- true|false when true disable all default settings, user need to set all settings
-  go = 'go',                      -- set to go1.18beta1 if necessary
-  goimports = 'gopls',            -- if set to 'gopls' will use gopls format, also goimports
+  disable_defaults = false, -- true|false when true disable all default settings, user need to set all settings
+  remap_commands = {}, -- Vim commands to remap or disable, e.g. `{ GoFmt = "GoFormat", GoDoc = false }`
+  go = 'go', -- set to go1.18beta1 if necessary
+  goimports = 'gopls', -- if set to 'gopls' will use gopls format, also goimports
   fillstruct = 'gopls',
   gofmt = 'gopls',                -- if set to gopls will use gopls format
   max_line_len = 0,
@@ -26,9 +27,15 @@ _GO_NVIM_CFG = {
   lsp_cfg = false, -- false: do nothing
   -- true: apply non-default gopls setup defined in go/gopls.lua
   -- if lsp_cfg is a table, merge table with with non-default gopls setup in go/gopls.lua, e.g.
-  lsp_gofumpt = false,            -- true: set default gofmt in gopls format to gofumpt
-  lsp_semantic_highlights = true, -- use highlights from gopls
-  lsp_on_attach = nil,            -- nil: use on_attach function defined in go/lsp.lua for gopls,
+  lsp_gofumpt = false, -- true: set default gofmt in gopls format to gofumpt
+  lsp_semantic_highlights = false, -- use highlights from gopls
+  lsp_impl = {
+    enable = false,
+    prefix = '  ',
+    separator = ', ',
+    highlight = 'Constant',
+  },
+  lsp_on_attach = nil, -- nil: use on_attach function defined in go/lsp.lua for gopls,
   --      when lsp_cfg is true
   -- if lsp_on_attach is a function: use this function as on_attach function for gopls,
   --                                 when lsp_cfg is true
@@ -311,6 +318,10 @@ function go.setup(cfg)
   vim.defer_fn(function()
     require('go.inlay').setup()
   end, 1)
+
+  if _GO_NVIM_CFG.lsp_impl and _GO_NVIM_CFG.lsp_impl.enable then
+    require('go.gopls_impl').setup(_GO_NVIM_CFG.lsp_impl)
+  end
 
   go.doc_complete = require('go.godoc').doc_complete
   go.package_complete = require('go.package').complete

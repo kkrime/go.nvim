@@ -27,7 +27,6 @@
   (raw_string_literal_content)
   ] @injection.content
  (#match? @injection.content "(SELECT|select|INSERT|insert|UPDATE|update|DELETE|delete).+(FROM|from|INTO|into|VALUES|values|SET|set).*(WHERE|where|GROUP BY|group by)?")
- (#offset! @injection.content 0 1 0 -1)
 (#set! injection.language "sql"))
 
 ; a general query injection
@@ -36,7 +35,7 @@
    (raw_string_literal_content)
  ] @sql
  (#match? @sql "(SELECT|select|INSERT|insert|UPDATE|update|DELETE|delete).+(FROM|from|INTO|into|VALUES|values|SET|set).*(WHERE|where|GROUP BY|group by)?")
- (#offset! @sql 0 1 0 -1))
+ )
 
 ; ----------------------------------------------------------------
 ; fallback keyword and comment based injection
@@ -49,7 +48,7 @@
                   "DATABASE" "FOREIGN KEY" "GROUP BY" "HAVING" "CREATE INDEX" "INSERT INTO"
                   "NOT NULL" "PRIMARY KEY" "UPDATE SET" "TRUNCATE TABLE" "LEFT JOIN" "add constraint" "alter table" "alter column" "database" "foreign key" "group by" "having" "create index" "insert into"
                   "not null" "primary key" "update set" "truncate table" "left join")
- (#offset! @sql 0 1 0 -1))
+ )
 
 ; nvim 0.10
 ([
@@ -60,7 +59,6 @@
                   "DATABASE" "FOREIGN KEY" "GROUP BY" "HAVING" "CREATE INDEX" "INSERT INTO"
                   "NOT NULL" "PRIMARY KEY" "UPDATE SET" "TRUNCATE TABLE" "LEFT JOIN" "add constraint" "alter table" "alter column" "database" "foreign key" "group by" "having" "create index" "insert into"
                   "not null" "primary key" "update set" "truncate table" "left join")
- (#offset! @injection.content 0 1 0 -1)
  (#set! injection.language "sql"))
 
 
@@ -88,21 +86,30 @@
 
 (const_spec
   name: (identifier)
-  value: (expression_list (raw_string_literal) @injection.content
-   (#lua-match? @injection.content "^`[\n|\t| ]*\{.*\}[\n|\t| ]*`$")
-   (#offset! @injection.content 0 1 0 -1)
-   (#set! injection.language "json")))
+  value: (expression_list
+	   (raw_string_literal
+	     (raw_string_literal_content) @injection.content
+             (#lua-match? @injection.content "^[\n|\t| ]*\{.*\}[\n|\t| ]*$")
+             (#set! injection.language "json")
+	    )
+   ))
 
 (short_var_declaration
     left: (expression_list (identifier))
-    right: (expression_list (raw_string_literal) @injection.content)
-  (#lua-match? @injection.content "^`[\n|\t| ]*\{.*\}[\n|\t| ]*`$")
-  (#offset! @injection.content 0 1 0 -1)
-  (#set! injection.language "json"))
+    right: (expression_list
+             (raw_string_literal
+               (raw_string_literal_content) @injection.content
+               (#lua-match? @injection.content "^[\n|\t| ]*\{.*\}[\n|\t| ]*$")
+               (#set! injection.language "json"))
+               )
+    )
 
 (var_spec
   name: (identifier)
-  value: (expression_list (raw_string_literal) @injection.content
-   (#lua-match? @injection.content "^`[\n|\t| ]*\{.*\}[\n|\t| ]*`$")
-   (#offset! @injection.content 0 1 0 -1)
-   (#set! injection.language "json")))
+  value: (expression_list
+           (raw_string_literal
+             (raw_string_literal_content) @injection.content
+             (#lua-match? @injection.content "^[\n|\t| ]*\{.*\}[\n|\t| ]*$")
+             (#set! injection.language "json")
+             )
+   ))
